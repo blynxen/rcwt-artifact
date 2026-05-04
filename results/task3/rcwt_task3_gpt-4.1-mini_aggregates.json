@@ -1,0 +1,326 @@
+[
+  {
+    "model": "gpt-4.1-mini",
+    "provider": "openai",
+    "task": "task3_conversational_recall",
+    "total_budget": 4096,
+    "n_trials_per_cell": 20,
+    "total_cost": 0.358,
+    "elapsed_seconds": 1223.7,
+    "noise_items_excluded": [],
+    "effective_items": [
+      "kafka_streaming",
+      "flink_ops",
+      "spark_sla",
+      "retention_compliance",
+      "s3_tiering",
+      "build_vs_buy",
+      "soc2_compat",
+      "onboarding_screens",
+      "progressive_disclosure",
+      "365day_cost"
+    ],
+    "aggregates": [
+      {
+        "proportion": 0.0,
+        "order": "coord_first",
+        "n_trials": 20,
+        "mean_effective": 0.885,
+        "std_effective": 0.0357,
+        "ci95_effective": [
+          0.8333517476611362,
+          0.9221368277817569
+        ],
+        "mean_raw": 0.885,
+        "std_raw": 0.0357,
+        "ci95_raw": [
+          0.8333517476611362,
+          0.9221368277817569
+        ],
+        "scores_by_dimension": {
+          "kafka_streaming": 1.0,
+          "flink_ops": 1.0,
+          "spark_sla": 1.0,
+          "retention_compliance": 0.0,
+          "s3_tiering": 1.0,
+          "build_vs_buy": 1.0,
+          "soc2_compat": 1.0,
+          "onboarding_screens": 1.0,
+          "progressive_disclosure": 1.0,
+          "365day_cost": 0.85
+        },
+        "mean_cost": 0.00171
+      },
+      {
+        "proportion": 0.0,
+        "order": "reason_first",
+        "n_trials": 20,
+        "mean_effective": 0.865,
+        "std_effective": 0.0477,
+        "ci95_effective": [
+          0.8107074954488287,
+          0.9055349202307972
+        ],
+        "mean_raw": 0.865,
+        "std_raw": 0.0477,
+        "ci95_raw": [
+          0.8107074954488287,
+          0.9055349202307972
+        ],
+        "scores_by_dimension": {
+          "kafka_streaming": 1.0,
+          "flink_ops": 1.0,
+          "spark_sla": 1.0,
+          "retention_compliance": 0.0,
+          "s3_tiering": 1.0,
+          "build_vs_buy": 1.0,
+          "soc2_compat": 1.0,
+          "onboarding_screens": 1.0,
+          "progressive_disclosure": 1.0,
+          "365day_cost": 0.65
+        },
+        "mean_cost": 0.00171
+      },
+      {
+        "proportion": 0.25,
+        "order": "coord_first",
+        "n_trials": 20,
+        "mean_effective": 0.885,
+        "std_effective": 0.0357,
+        "ci95_effective": [
+          0.8333517476611362,
+          0.9221368277817569
+        ],
+        "mean_raw": 0.885,
+        "std_raw": 0.0357,
+        "ci95_raw": [
+          0.8333517476611362,
+          0.9221368277817569
+        ],
+        "scores_by_dimension": {
+          "kafka_streaming": 1.0,
+          "flink_ops": 1.0,
+          "spark_sla": 1.0,
+          "retention_compliance": 0.95,
+          "s3_tiering": 1.0,
+          "build_vs_buy": 0.9,
+          "soc2_compat": 1.0,
+          "onboarding_screens": 1.0,
+          "progressive_disclosure": 1.0,
+          "365day_cost": 0.0
+        },
+        "mean_cost": 0.002105
+      },
+      {
+        "proportion": 0.25,
+        "order": "reason_first",
+        "n_trials": 20,
+        "mean_effective": 0.915,
+        "std_effective": 0.0357,
+        "ci95_effective": [
+          0.8681031145576462,
+          0.9462547005301477
+        ],
+        "mean_raw": 0.915,
+        "std_raw": 0.0357,
+        "ci95_raw": [
+          0.8681031145576462,
+          0.9462547005301477
+        ],
+        "scores_by_dimension": {
+          "kafka_streaming": 1.0,
+          "flink_ops": 1.0,
+          "spark_sla": 1.0,
+          "retention_compliance": 1.0,
+          "s3_tiering": 1.0,
+          "build_vs_buy": 1.0,
+          "soc2_compat": 1.0,
+          "onboarding_screens": 1.0,
+          "progressive_disclosure": 1.0,
+          "365day_cost": 0.15
+        },
+        "mean_cost": 0.002036
+      },
+      {
+        "proportion": 0.5,
+        "order": "coord_first",
+        "n_trials": 20,
+        "mean_effective": 0.9,
+        "std_effective": 0.0,
+        "ci95_effective": [
+          0.8505931364369146,
+          0.9343300588284289
+        ],
+        "mean_raw": 0.9,
+        "std_raw": 0.0,
+        "ci95_raw": [
+          0.8505931364369146,
+          0.9343300588284289
+        ],
+        "scores_by_dimension": {
+          "kafka_streaming": 1.0,
+          "flink_ops": 1.0,
+          "spark_sla": 1.0,
+          "retention_compliance": 1.0,
+          "s3_tiering": 1.0,
+          "build_vs_buy": 1.0,
+          "soc2_compat": 1.0,
+          "onboarding_screens": 1.0,
+          "progressive_disclosure": 1.0,
+          "365day_cost": 0.0
+        },
+        "mean_cost": 0.001718
+      },
+      {
+        "proportion": 0.5,
+        "order": "reason_first",
+        "n_trials": 20,
+        "mean_effective": 0.945,
+        "std_effective": 0.0497,
+        "ci95_effective": [
+          0.9042120755340645,
+          0.9690149791986299
+        ],
+        "mean_raw": 0.945,
+        "std_raw": 0.0497,
+        "ci95_raw": [
+          0.9042120755340645,
+          0.9690149791986299
+        ],
+        "scores_by_dimension": {
+          "kafka_streaming": 1.0,
+          "flink_ops": 1.0,
+          "spark_sla": 1.0,
+          "retention_compliance": 1.0,
+          "s3_tiering": 1.0,
+          "build_vs_buy": 1.0,
+          "soc2_compat": 1.0,
+          "onboarding_screens": 1.0,
+          "progressive_disclosure": 1.0,
+          "365day_cost": 0.45
+        },
+        "mean_cost": 0.001718
+      },
+      {
+        "proportion": 0.75,
+        "order": "coord_first",
+        "n_trials": 20,
+        "mean_effective": 0.91,
+        "std_effective": 0.03,
+        "ci95_effective": [
+          0.8622332538615105,
+          0.9423130212854665
+        ],
+        "mean_raw": 0.91,
+        "std_raw": 0.03,
+        "ci95_raw": [
+          0.8622332538615105,
+          0.9423130212854665
+        ],
+        "scores_by_dimension": {
+          "kafka_streaming": 1.0,
+          "flink_ops": 1.0,
+          "spark_sla": 1.0,
+          "retention_compliance": 1.0,
+          "s3_tiering": 1.0,
+          "build_vs_buy": 1.0,
+          "soc2_compat": 1.0,
+          "onboarding_screens": 1.0,
+          "progressive_disclosure": 1.0,
+          "365day_cost": 0.1
+        },
+        "mean_cost": 0.001724
+      },
+      {
+        "proportion": 0.75,
+        "order": "reason_first",
+        "n_trials": 20,
+        "mean_effective": 0.92,
+        "std_effective": 0.04,
+        "ci95_effective": [
+          0.8740095102048769,
+          0.9501598448237337
+        ],
+        "mean_raw": 0.92,
+        "std_raw": 0.04,
+        "ci95_raw": [
+          0.8740095102048769,
+          0.9501598448237337
+        ],
+        "scores_by_dimension": {
+          "kafka_streaming": 1.0,
+          "flink_ops": 1.0,
+          "spark_sla": 1.0,
+          "retention_compliance": 1.0,
+          "s3_tiering": 1.0,
+          "build_vs_buy": 1.0,
+          "soc2_compat": 1.0,
+          "onboarding_screens": 1.0,
+          "progressive_disclosure": 1.0,
+          "365day_cost": 0.2
+        },
+        "mean_cost": 0.001724
+      },
+      {
+        "proportion": 0.9,
+        "order": "coord_first",
+        "n_trials": 20,
+        "mean_effective": 0.9,
+        "std_effective": 0.0,
+        "ci95_effective": [
+          0.8505931364369146,
+          0.9343300588284289
+        ],
+        "mean_raw": 0.9,
+        "std_raw": 0.0,
+        "ci95_raw": [
+          0.8505931364369146,
+          0.9343300588284289
+        ],
+        "scores_by_dimension": {
+          "kafka_streaming": 1.0,
+          "flink_ops": 1.0,
+          "spark_sla": 1.0,
+          "retention_compliance": 1.0,
+          "s3_tiering": 1.0,
+          "build_vs_buy": 1.0,
+          "soc2_compat": 1.0,
+          "onboarding_screens": 1.0,
+          "progressive_disclosure": 1.0,
+          "365day_cost": 0.0
+        },
+        "mean_cost": 0.001726
+      },
+      {
+        "proportion": 0.9,
+        "order": "reason_first",
+        "n_trials": 20,
+        "mean_effective": 0.91,
+        "std_effective": 0.03,
+        "ci95_effective": [
+          0.8622332538615105,
+          0.9423130212854665
+        ],
+        "mean_raw": 0.91,
+        "std_raw": 0.03,
+        "ci95_raw": [
+          0.8622332538615105,
+          0.9423130212854665
+        ],
+        "scores_by_dimension": {
+          "kafka_streaming": 1.0,
+          "flink_ops": 1.0,
+          "spark_sla": 1.0,
+          "retention_compliance": 1.0,
+          "s3_tiering": 1.0,
+          "build_vs_buy": 1.0,
+          "soc2_compat": 1.0,
+          "onboarding_screens": 1.0,
+          "progressive_disclosure": 1.0,
+          "365day_cost": 0.1
+        },
+        "mean_cost": 0.001726
+      }
+    ]
+  }
+]

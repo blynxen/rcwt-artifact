@@ -1,0 +1,8 @@
+anthropic
+openai
+google-genai
+datasets
+tiktoken
+numpy
+scipy
+matplotlib

@@ -1,0 +1,326 @@
+[
+  {
+    "model": "gemini-2.0-flash",
+    "provider": "google",
+    "task": "task2_algorithmic_trace",
+    "total_budget": 4096,
+    "n_trials_per_cell": 20,
+    "total_cost": 0.164,
+    "elapsed_seconds": 1393.9,
+    "noise_items_excluded": [],
+    "effective_items": [
+      "sum_correct",
+      "above_count",
+      "below_count",
+      "equal_count",
+      "above_indices",
+      "equal_indices",
+      "mean_correct",
+      "max_above_correct",
+      "below_has_zero",
+      "no_negatives"
+    ],
+    "aggregates": [
+      {
+        "proportion": 0.0,
+        "order": "coord_first",
+        "n_trials": 20,
+        "mean_effective": 0.915,
+        "std_effective": 0.0357,
+        "ci95_effective": [
+          0.8681031145576462,
+          0.9462547005301477
+        ],
+        "mean_raw": 0.915,
+        "std_raw": 0.0357,
+        "ci95_raw": [
+          0.8681031145576462,
+          0.9462547005301477
+        ],
+        "scores_by_dimension": {
+          "sum_correct": 1.0,
+          "above_count": 1.0,
+          "below_count": 1.0,
+          "equal_count": 1.0,
+          "above_indices": 1.0,
+          "equal_indices": 1.0,
+          "mean_correct": 1.0,
+          "max_above_correct": 1.0,
+          "below_has_zero": 1.0,
+          "no_negatives": 0.15
+        },
+        "mean_cost": 0.000849
+      },
+      {
+        "proportion": 0.0,
+        "order": "reason_first",
+        "n_trials": 20,
+        "mean_effective": 0.92,
+        "std_effective": 0.04,
+        "ci95_effective": [
+          0.8740095102048769,
+          0.9501598448237337
+        ],
+        "mean_raw": 0.92,
+        "std_raw": 0.04,
+        "ci95_raw": [
+          0.8740095102048769,
+          0.9501598448237337
+        ],
+        "scores_by_dimension": {
+          "sum_correct": 1.0,
+          "above_count": 1.0,
+          "below_count": 1.0,
+          "equal_count": 1.0,
+          "above_indices": 1.0,
+          "equal_indices": 1.0,
+          "mean_correct": 1.0,
+          "max_above_correct": 1.0,
+          "below_has_zero": 1.0,
+          "no_negatives": 0.2
+        },
+        "mean_cost": 0.000849
+      },
+      {
+        "proportion": 0.25,
+        "order": "coord_first",
+        "n_trials": 20,
+        "mean_effective": 0.98,
+        "std_effective": 0.04,
+        "ci95_effective": [
+          0.9497121344948062,
+          0.9921956998236058
+        ],
+        "mean_raw": 0.98,
+        "std_raw": 0.04,
+        "ci95_raw": [
+          0.9497121344948062,
+          0.9921956998236058
+        ],
+        "scores_by_dimension": {
+          "sum_correct": 1.0,
+          "above_count": 1.0,
+          "below_count": 1.0,
+          "equal_count": 1.0,
+          "above_indices": 1.0,
+          "equal_indices": 1.0,
+          "mean_correct": 1.0,
+          "max_above_correct": 1.0,
+          "below_has_zero": 1.0,
+          "no_negatives": 0.8
+        },
+        "mean_cost": 0.000809
+      },
+      {
+        "proportion": 0.25,
+        "order": "reason_first",
+        "n_trials": 20,
+        "mean_effective": 0.91,
+        "std_effective": 0.2142,
+        "ci95_effective": [
+          0.8622332538615105,
+          0.9423130212854665
+        ],
+        "mean_raw": 0.91,
+        "std_raw": 0.2142,
+        "ci95_raw": [
+          0.8622332538615105,
+          0.9423130212854665
+        ],
+        "scores_by_dimension": {
+          "sum_correct": 0.95,
+          "above_count": 0.95,
+          "below_count": 0.95,
+          "equal_count": 0.95,
+          "above_indices": 0.95,
+          "equal_indices": 0.95,
+          "mean_correct": 0.95,
+          "max_above_correct": 0.95,
+          "below_has_zero": 0.95,
+          "no_negatives": 0.55
+        },
+        "mean_cost": 0.000818
+      },
+      {
+        "proportion": 0.5,
+        "order": "coord_first",
+        "n_trials": 20,
+        "mean_effective": 0.99,
+        "std_effective": 0.03,
+        "ci95_effective": [
+          0.9642775148038205,
+          0.9972533993962251
+        ],
+        "mean_raw": 0.99,
+        "std_raw": 0.03,
+        "ci95_raw": [
+          0.9642775148038205,
+          0.9972533993962251
+        ],
+        "scores_by_dimension": {
+          "sum_correct": 1.0,
+          "above_count": 0.95,
+          "below_count": 1.0,
+          "equal_count": 1.0,
+          "above_indices": 1.0,
+          "equal_indices": 1.0,
+          "mean_correct": 1.0,
+          "max_above_correct": 1.0,
+          "below_has_zero": 1.0,
+          "no_negatives": 0.95
+        },
+        "mean_cost": 0.000776
+      },
+      {
+        "proportion": 0.5,
+        "order": "reason_first",
+        "n_trials": 20,
+        "mean_effective": 0.915,
+        "std_effective": 0.0357,
+        "ci95_effective": [
+          0.8681031145576462,
+          0.9462547005301477
+        ],
+        "mean_raw": 0.915,
+        "std_raw": 0.0357,
+        "ci95_raw": [
+          0.8681031145576462,
+          0.9462547005301477
+        ],
+        "scores_by_dimension": {
+          "sum_correct": 1.0,
+          "above_count": 1.0,
+          "below_count": 1.0,
+          "equal_count": 1.0,
+          "above_indices": 1.0,
+          "equal_indices": 1.0,
+          "mean_correct": 1.0,
+          "max_above_correct": 1.0,
+          "below_has_zero": 1.0,
+          "no_negatives": 0.15
+        },
+        "mean_cost": 0.000846
+      },
+      {
+        "proportion": 0.75,
+        "order": "coord_first",
+        "n_trials": 20,
+        "mean_effective": 0.995,
+        "std_effective": 0.0218,
+        "ci95_effective": [
+          0.9722256001302286,
+          0.999116854010634
+        ],
+        "mean_raw": 0.995,
+        "std_raw": 0.0218,
+        "ci95_raw": [
+          0.9722256001302286,
+          0.999116854010634
+        ],
+        "scores_by_dimension": {
+          "sum_correct": 1.0,
+          "above_count": 0.95,
+          "below_count": 1.0,
+          "equal_count": 1.0,
+          "above_indices": 1.0,
+          "equal_indices": 1.0,
+          "mean_correct": 1.0,
+          "max_above_correct": 1.0,
+          "below_has_zero": 1.0,
+          "no_negatives": 1.0
+        },
+        "mean_cost": 0.000787
+      },
+      {
+        "proportion": 0.75,
+        "order": "reason_first",
+        "n_trials": 20,
+        "mean_effective": 0.905,
+        "std_effective": 0.0218,
+        "ci95_effective": [
+          0.8563973488560237,
+          0.9383373863501365
+        ],
+        "mean_raw": 0.905,
+        "std_raw": 0.0218,
+        "ci95_raw": [
+          0.8563973488560237,
+          0.9383373863501365
+        ],
+        "scores_by_dimension": {
+          "sum_correct": 1.0,
+          "above_count": 1.0,
+          "below_count": 1.0,
+          "equal_count": 1.0,
+          "above_indices": 1.0,
+          "equal_indices": 1.0,
+          "mean_correct": 1.0,
+          "max_above_correct": 1.0,
+          "below_has_zero": 1.0,
+          "no_negatives": 0.05
+        },
+        "mean_cost": 0.000849
+      },
+      {
+        "proportion": 0.9,
+        "order": "coord_first",
+        "n_trials": 20,
+        "mean_effective": 0.995,
+        "std_effective": 0.0218,
+        "ci95_effective": [
+          0.9722256001302286,
+          0.999116854010634
+        ],
+        "mean_raw": 0.995,
+        "std_raw": 0.0218,
+        "ci95_raw": [
+          0.9722256001302286,
+          0.999116854010634
+        ],
+        "scores_by_dimension": {
+          "sum_correct": 1.0,
+          "above_count": 1.0,
+          "below_count": 1.0,
+          "equal_count": 1.0,
+          "above_indices": 1.0,
+          "equal_indices": 1.0,
+          "mean_correct": 1.0,
+          "max_above_correct": 1.0,
+          "below_has_zero": 1.0,
+          "no_negatives": 0.95
+        },
+        "mean_cost": 0.000805
+      },
+      {
+        "proportion": 0.9,
+        "order": "reason_first",
+        "n_trials": 20,
+        "mean_effective": 0.96,
+        "std_effective": 0.049,
+        "ci95_effective": [
+          0.9230670617058012,
+          0.9795946128493436
+        ],
+        "mean_raw": 0.96,
+        "std_raw": 0.049,
+        "ci95_raw": [
+          0.9230670617058012,
+          0.9795946128493436
+        ],
+        "scores_by_dimension": {
+          "sum_correct": 1.0,
+          "above_count": 0.6,
+          "below_count": 1.0,
+          "equal_count": 1.0,
+          "above_indices": 1.0,
+          "equal_indices": 1.0,
+          "mean_correct": 1.0,
+          "max_above_correct": 1.0,
+          "below_has_zero": 1.0,
+          "no_negatives": 1.0
+        },
+        "mean_cost": 0.000814
+      }
+    ]
+  }
+]
