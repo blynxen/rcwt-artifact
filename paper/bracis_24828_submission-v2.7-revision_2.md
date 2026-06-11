@@ -1,5 +1,5 @@
 ---
-title: "Reasoning Under Context Competition: A Controlled Study of Coordination Overhead in LLM Calls"
+title: "RCWT: Measuring Task-Budget Displacement from Coordination Content in LLM Calls"
 author: "Anonymous Authors"
 documentclass: llncs
 classoption: runningheads
@@ -16,100 +16,112 @@ header-includes:
 ---
 
 \begin{abstract}
-Multi-agent and memory-augmented LLM systems often place coordination content, such as shared state, prior discussion, or intermediate summaries, into the same finite context window used for the task itself, creating direct competition between coordination tokens and task-relevant reasoning tokens. We study this tradeoff with the Roundtable Context Window Test (RCWT), a controlled protocol that varies coordination overhead while holding total context budget fixed. Across three commercial models on a context-dependent recall task, performance remains strong through moderate overhead and then degrades sharply at extreme overhead levels; among several simple candidate families, a logistic curve provides the best empirical fit to the observed transition. At a 4,096-token budget, the degradation region appears near 91--94\% coordination overhead, although the exact location and steepness are model- and task-dependent. Additional experiments at larger context budgets suggest that this behavior may be better explained by a minimum remaining task-execution context reserve than by a fixed coordination proportion alone, but we view this as a preliminary interpretation that requires validation across additional window sizes and task families. We further find substantial task dependence: self-contained algorithmic tasks show little degradation, contradictory coordination content produces a distinct distraction pattern in one model family, and pack-style DROP probes require a much larger residual task budget than compact reasoning probes. Overall, RCWT provides a controlled methodology for studying context competition in LLM calls and suggests that practical systems should explicitly reserve task-specific execution budget rather than treating coordination context as cost-free.
-An anonymized replication package is available at \url{https://anonymous.4open.science/r/rcwt-artifact-3DD8/}.
-\keywords{Large language models \and Multi-agent systems \and Context windows \and Reasoning \and Benchmarking}
+Multi-agent and memory-augmented LLM systems often place coordination content---shared state, prior discussion, tool outputs, summaries, and role instructions---inside the same finite prompt used for the current task. This creates a practical allocation problem: every token spent on coordination is unavailable to the task block when a call is assembled under a fixed context budget. We introduce the Roundtable Context Window Test (RCWT), a controlled protocol for measuring this task-budget displacement effect. RCWT varies coordination content while controlling total budget, position order, task family, and scoring. In the main context-dependent recall task at $W=4096$, three commercial models remain near baseline through moderate overhead and then degrade sharply once the residual task block falls to a few hundred tokens. Window-scaling summaries are consistent with a task-specific residual-budget interpretation rather than a fixed percentage threshold, but we treat this as descriptive evidence rather than a universal law. To address the truncation-versus-competition confound raised by review, we add an intact-task ablation: the full task/reference block is kept present while coordination tokens increase by expanding total prompt length. In that setting, accuracy remains at 1.000 across GPT-4.1-mini, Claude Haiku 4.5, and Gemini 2.5 Flash up to a 95\% coordination ratio. This ablation narrows the claim: the main RCWT cliff is best read as task-budget displacement, not as proof of semantic interference when the task remains intact. RCWT is therefore a measurement primitive for context-allocation budgeting, not a complete theory of multi-agent benefit or session-level coordination.
+\keywords{Large language models \and Multi-agent systems \and Context windows \and Benchmarking \and Prompt allocation}
 \end{abstract}
 
 ## 1. Introduction
 
-Multi-agent and memory-augmented LLM systems increasingly assemble multiple functional components inside a single model context: agent messages, retrieved memories or documents, summaries of prior context, tool observations, and coordination instructions \cite{ram-etal-2023-context,toolformer,autogen,guo2024multiagents}. This composition is constrained by predefined context-window limits, which can become binding in settings such as extended conversations, document summarization, and long-horizon reasoning \cite{longlora}. We study the per-call version of this problem, not full session-level multi-agent dynamics. A single call may contain the task, retrieved memories, summaries of prior turns, intermediate conclusions from other agents, tool outputs, and instructions for how the current model should coordinate with the rest of the system. These components are operationally useful, but they occupy the same finite context window. This motivates studying how task performance changes as non-task coordination content consumes more of the available input budget, especially given evidence that LLMs do not always use long contexts robustly \cite{lostmiddle,du2025contextlength}.
+Modern LLM applications assemble many kinds of information into a single call: task instructions, retrieved documents, memory summaries, prior agent messages, tool observations, role prompts, and shared state \cite{ram-etal-2023-context,toolformer,autogen,guo2024multiagents}. The application-level question is not only whether a model advertises a large context window, but how much of the current call is allocated to the task block that must be read and acted on. Prior long-context work shows that models do not use all positions uniformly and that longer inputs can degrade performance even when relevant information is available \cite{lostmiddle,longbench,ruler,du2025contextlength}.
 
-This paper studies a narrow version of that competition: in a single LLM call with fixed context budget $W$, what happens as coordination content $c$ increases and the remaining task block $W-c$ shrinks? For convenience, we refer to this fixed-budget tradeoff as \emph{context competition}. For a model $M$, we define $R_M(c,W,T)$ as the expected response quality on task family $T$ when $c$ tokens of the context window are occupied by coordination content under total budget $W$. In our experiments, $R_M$ is estimated empirically using task-specific performance metrics such as accuracy. Thus, our object of study is not a universal property of LLMs, but a family of model- and task-dependent response quality curves.
-
-We introduce the Roundtable Context Window Test (RCWT), a controlled protocol that varies coordination overhead while holding total context budget fixed. RCWT is designed to isolate coordination-token pressure from other multi-agent confounds such as turn scheduling, tool failures, memory retrieval policy, and agent topology. The protocol measures a single model call at a time, with fixed task content, fixed coordination content, explicit position control, and binary scoring against precomputed ground truth.
-
-Our central empirical finding is intentionally scoped. On a context-dependent technical-specification recall task across three commercial models, quality remains high through moderate coordination overhead and then degrades sharply at extreme overhead. A logistic curve best summarizes the observed transition among the simple candidate families tested. At $W=4096$, the transition appears near 91--94\% coordination overhead. Additional window-size experiments suggest that the transition is better described by a minimum remaining task budget than by a fixed overhead proportion alone, but this interpretation should be treated as exploratory and task-dependent.
-
-The paper makes four contributions:
-
-1. \textbf{A controlled methodology.} RCWT varies coordination proportion with fixed context budget, position control, binary scoring, and multi-provider evaluation.
-2. \textbf{An empirical characterization.} On the main context-dependent task, all three tested providers show a sharp high-overhead degradation pattern; a logistic curve is the best empirical fit among five simple candidate forms.
-3. \textbf{A task-dependence analysis.} Self-contained algorithmic tasks do not show the same degradation, while contradictory coordination content produces a distinct model-dependent distraction pattern.
-4. \textbf{A practical implication.} Coordination content should be budgeted explicitly. For systems operating in task regimes similar to the main RCWT task, preserving a calibrated task-specific residual budget is safer than relying on a fixed coordination proportion.
-
-The claim is not that RCWT discovers a universal context law. The claim is that RCWT gives a reproducible way to measure how task quality changes when coordination content competes with task content inside one LLM call.
-
-## 2. Related Work
-
-\textbf{Long-context behavior.} Prior work shows that larger context windows do not guarantee uniform use of all positions. The "lost in the middle" result demonstrates that LLMs can underuse relevant information placed away from the beginning or end of a long context \cite{lostmiddle}. LongBench broadens long-context evaluation across single-document QA, multi-document QA, summarization, few-shot learning, synthetic tasks, and code completion \cite{longbench}. RULER further expands needle-in-a-haystack style testing with configurable sequence length and task complexity, including multi-hop tracing, aggregation, and QA-style tasks \cite{ruler}. RCWT asks a different but adjacent question: not only where relevant content is placed or how far a model's effective context extends, but how quality changes when coordination content consumes increasing fractions of a fixed per-call window.
-
-\textbf{Attention and systems bottlenecks.} Long-context systems face computational and memory pressure from attention and KV-cache growth. Long-context extension methods also show that expanding usable context often requires architectural, training, or attention-pattern changes rather than merely increasing a nominal token limit \cite{longlora}. Efficient-attention work reduces these costs through IO-aware exact attention or sparse/local/global attention patterns \cite{flashattention,longformer,bigbird}. These methods address how to make long contexts feasible; RCWT measures whether the feasible context is being allocated to coordination or to the task content needed by the current call.
-
-\textbf{Context compression.} Prompt and context compression methods such as LLMLingua-2 reduce token count while attempting to preserve task-relevant information \cite{llmlingua2}. RCWT can be viewed as a complementary measurement tool: if compression reduces coordination tokens without destroying relevant state, it should move a call away from the high-overhead transition region.
-
-\textbf{Multi-agent coordination overhead.} LLM multi-agent systems introduce coordination costs through inter-agent communication, role specification, orchestration, and task verification \cite{mast}. Recent scaling studies further show that adding agents can yield diminishing or negative returns when coordination overhead, error amplification, or task structure dominate the benefits of parallelism \cite{scalingagents}. However, such systems usually combine several mechanisms at once, including decomposition, debate, voting, tool use, memory, and orchestration. RCWT isolates one component: competition between coordination tokens and task tokens in a single call.
-
-\textbf{External benchmark probes.} GSM8K evaluates grade-school mathematical reasoning \cite{gsm8k}; MMLU-Pro evaluates robust multi-task language understanding \cite{mmlupro}; and DROP evaluates discrete reasoning over paragraphs \cite{drop}. We do not use these as leaderboard benchmarks. Instead, we adapt them into pack-style RCWT stress probes to check whether high-overhead behavior appears outside the original technical-specification task. We do not run RULER in this submission because RULER primarily varies effective sequence length and task complexity, whereas RCWT fixes $W$ and varies the coordination/task allocation inside a single call. A RULER-style RCWT variant is a natural follow-up.
-
-
-## 3. Method
-
-### 3.1 Problem Setup
-
-Let $W$ be a fixed context budget. Let $c$ be the number of tokens allocated to coordination content, and let $p=c/W$ be the coordination proportion. The remaining budget $W-c$ is allocated to task content. RCWT estimates a quality function:
+This paper studies a narrow, operational version of that problem. For a single model call with context budget $W$, let $c$ be coordination content and let $W-c$ be the remaining task block. We estimate
 
 $$
 R_M(c,W,T) \in [0,1],
 $$
 
-where $T$ denotes the task family. Quality is measured against binary ground truth or exact answer extraction, depending on the task.
+where $M$ is the model and $T$ is the task family. The original submission called this broadly context competition. The revised paper uses the more precise term **task-budget displacement** for the main effect: under fixed $W$, increasing coordination content can physically reduce or truncate the task evidence needed by the current call.
 
-### 3.2 RCWT Protocol
+We introduce the Roundtable Context Window Test (RCWT). RCWT is a single-call benchmark protocol that varies coordination allocation while controlling prompt order and scoring. It intentionally excludes full multi-agent session dynamics such as turn scheduling, retrieval policy, memory writes, tool failures, and agent topology. Those factors matter, but mixing them into the same experiment would obscure the local allocation effect.
 
-The main RCWT task is context-dependent recall over a technical software specification. The coordination block is synthetic but structured: it follows a multi-agent/Roundtable context format with role and protocol descriptions, inter-agent message history, shared state and propositions, and tool schemas. We do not use real production logs in the central tests; Task 4 uses a Roundtable-style transcript that is likewise controlled and constructed to admit clean ground truth. The correct characterization is therefore realistic controlled coordination content, not real Roundtable logs. The task block asks for a structured response whose scored facts must be recovered from that document. This design is related to long-context retrieval and recall evaluations, including key-value retrieval and needle-in-a-haystack style probes, but differs in that RCWT varies the fraction of the fixed context budget consumed by coordination content rather than only varying context length or answer position \cite{lostmiddle,ivgi-etal-2023-efficient}. Two items absent from the reference specification are excluded from the effective score, yielding an 8-item effective score. For example, a scored item may check whether a named configuration option is enabled, deprecated, or subject to a stated constraint in the preceding specification. See Appendix A for a representative example.
-The main experiment uses $W=4096$ and coordination proportions $p \in \{0, 25, 50, 75, 90, 92, 94, 96, 98\}\%$. Each cell is run in two position orders: \texttt{coord\_first}, where coordination content precedes the task, and \texttt{reason\_first}, where the task precedes coordination content. This order control is motivated by prior evidence that LLM performance can depend strongly on where relevant information appears within a long context \cite{lostmiddle}. The primary $W=4096$ suite uses $N=20$ trials per cell.
+The revised contributions are:
 
-The sample size is cost-bounded but targeted at large effects. Pooling both orders gives 40 calls and 320 binary item observations per proportion on the main 8-item effective score. We report Wilson 95\% confidence intervals for binomial proportions \cite{wilson1927probable} and two-proportion tests for the main baseline-vs-high-overhead comparison. This design is adequate for the observed 15--34 percentage-point drops at 90\% overhead, but not for small-effect claims; those remain exploratory.
+1. **A controlled protocol.** RCWT varies coordination allocation under fixed budget with position control, explicit token accounting, and task-level scoring.
+2. **A fixed-budget displacement result.** On a technical-specification recall task, accuracy remains high at moderate overhead and drops sharply only when the residual task block becomes very small.
+3. **A truncation-disambiguating ablation.** When the full task block remains intact and total prompt length grows to accommodate coordination, accuracy stays at ceiling across tested models and ratios.
+4. **Task dependence and boundary evidence.** Self-contained tasks remain stable, contradictory coordination can produce model-specific distraction, and passage-heavy DROP packs require much larger residual task budgets.
+5. **A scoped engineering implication.** Coordination context should be budgeted against task-specific residual needs. RCWT does not measure the net benefit of coordination.
 
-### 3.3 Candidate Curves
+## 2. Related Work
 
-For the main context-dependent task, we fit five simple candidate families: logistic, power law, exponential, quadratic, and piecewise linear. These families were chosen as descriptive baselines spanning plausible degradation shapes: a bounded S-shaped threshold, gradual exponential decay, heavy-tailed power-law decay, smooth polynomial curvature, and an explicit breakpoint model. They are not treated as mechanistic proofs. The logistic form is:
+**Long-context behavior.** The Lost in the Middle result showed that LLMs can fail to use relevant information depending on position \cite{lostmiddle}. LongBench and RULER broaden long-context evaluation across retrieval, QA, summarization, synthetic tasks, and configurable sequence lengths \cite{longbench,ruler}. RCWT differs by holding a call budget fixed and varying allocation between coordination-like content and task evidence.
+
+**Attention and systems bottlenecks.** Long-context use is constrained by attention and KV-cache costs. LongLoRA, FlashAttention, Longformer, and BigBird address feasibility through training or attention mechanisms \cite{longlora,flashattention,longformer,bigbird}. RCWT asks a complementary application-level question: given a feasible context, how much of it is left for the task block?
+
+**Context compression.** Prompt compression systems such as LLMLingua and LLMLingua-2 reduce token count while trying to preserve task-relevant information \cite{jiang-etal-2023-llmlingua,llmlingua2}. RCWT can evaluate whether compression moves a call away from a high-displacement regime.
+
+**Multi-agent coordination.** Multi-agent LLM systems introduce communication, role, orchestration, verification, and memory overhead \cite{mast,scalingagents}. They may also produce benefits through decomposition, critique, and specialized roles. RCWT measures only the per-call token cost side of that ledger. It does not estimate net system value.
+
+## 3. Method
+
+### 3.1 Fixed-budget RCWT
+
+The main RCWT task is context-dependent recall over a technical software specification. The task asks for a structured technical analysis whose scored facts must be recovered from a reference block. The coordination block is synthetic but structured like multi-agent shared context: role/protocol text, agent messages, shared propositions, and tool schemas.
+
+Token accounting is deterministic in the artifact. Prompt construction uses the `cl100k_base` tokenizer to size blocks. For each target allocation, the coordination template is repeated or prefix-truncated to the requested coordination-token count. The reference template is likewise repeated or prefix-truncated to the remaining task-token count. Provider-reported token counts are saved with every trial, but the allocation itself is built from this common tokenizer so the sweep is reproducible across providers.
+
+The main experiment uses $W=4096$ and coordination proportions
+
+$$p \in \{0,25,50,75,90,92,94,96,98\}\%.$$
+
+Each condition is run in two orders: `coord_first` and `reason_first`. The primary suite uses $N=20$ trials per cell. The original open-ended responses are scored with a binary fact-checking judge over 10 items, with two known floor-effect items excluded from the effective score. The 8 effective items are:
+
+1. three encryption options;
+2. recommendation of per-document symmetric key;
+3. PostgreSQL LISTEN/NOTIFY 8KB payload limit;
+4. Redis Pub/Sub approximately 100K messages/sec;
+5. Redis Streams approximately 5ms latency versus Pub/Sub approximately 1ms;
+6. ProseMirror as the rich-text recommendation;
+7. backend team needs 1 week CRDT ramp-up;
+8. WebSocket/infrastructure migration takes about 2--3 weeks.
+
+The two excluded items are `crdt_throughput` and `mls_rfc`, which behaved as floor-effect parsing items in the original baseline. The artifact reports both raw and effective scores.
+
+### 3.2 Candidate curves and residual-budget summary
+
+For the main task, we fit logistic, power-law, exponential, quadratic, and piecewise-linear descriptive curves. The logistic form is
 
 $$
-R_M(c,W,T)=\frac{R_0}{1+\exp(k(c/W-p_0))},
+R_M(c,W,T)=\frac{R_0}{1+\exp(k(c/W-p_0))}.
 $$
 
-where $R_0$ is the baseline score, $p_0$ is the fitted transition location, and $k$ controls transition steepness. We treat this as an empirical summary, not a mechanistic derivation.
+This is not a mechanistic proof. The cliff-region sampling makes a threshold-like family likely to fit well. We use the curve as compact interpolation, not as evidence of a universal law.
 
-### 3.4 Boundary Tasks
+We also summarize the transition with a task-specific residual budget parameter $\theta$:
 
-To test whether coordination overhead alone explains degradation, RCWT includes boundary tasks:
+$$
+p_0(W)=1-\frac{\theta}{W}.
+$$
 
-- \textbf{Self-contained algorithmic task.} The task block contains a Python function, one concrete input, and ten yes/no questions about the execution trace. The correct answers can be computed entirely from the task block; the coordination block is intentionally irrelevant. If performance remains stable as coordination grows, this indicates that overhead is not harmful merely because it adds unrelated text. See Appendix A for a representative example. 
-- \textbf{Context-distraction task.} The task block asks yes/no questions about general data-engineering and product-practice priors. The coordination block is a meeting transcript with salient project-specific decisions that sometimes conflict with those priors, such as choosing an in-house masking layer because a vendor failed a System and Organization Controls (SOC) 2 requirement. This probes semantic distraction: coordination content may hurt by changing which evidence the model treats as salient, not only by consuming tokens. See Appendix A for a representative example. 
- 
-- \textbf{External benchmark probes.} We adapt GSM8K, MMLU-Pro, and DROP into \emph{pack-style} RCWT probes by grouping 10 benchmark items into a single model call. Each pack preserves the original task format at the item level, but the larger combined task block makes coordination overhead materially affect the residual task budget. This design avoids treating isolated one-question prompts as meaningful stress tests of context competition, since such prompts are often too small for high-overhead truncation to affect the task content. 
+This relation is an empirical description over the tested window sizes. With only a small number of window sizes, $\theta$ should be read as a calibration estimate, not as a validated invariant.
 
-### 3.5 Models and Setup
+### 3.3 Intact-task ablation
 
-Three commercial models from different providers are tested: Gemini 2.0 Flash, Claude Haiku 4.5, and GPT-4.1-mini. Calls use direct provider APIs rather than a multi-agent framework, because the goal is to isolate the single-call context competition effect.
+The key revision is an ablation that directly addresses whether the main cliff is caused by task truncation or by semantic interference from extra coordination text. The full task/reference block is kept intact in every condition. Coordination tokens are varied around it, and the total prompt length grows accordingly. Thus, the task is never physically shortened.
 
-For double-anonymous review, the replication package is prepared as an anonymized source artifact containing experiment scripts, prompt templates, result summaries, and plotting code. The public repository link will be added after the review process permits deanonymization.
+The ablation uses deterministic JSON scoring rather than an LLM judge. It asks for eight exact fields matching the same reference facts used in the main task. Tested ratios are $0, 0.50, 0.75, 0.90, 0.95$; both prompt orders are tested; $N=5$ per condition; models are GPT-4.1-mini, Claude Haiku 4.5, and Gemini 2.5 Flash. The Gemini model differs from the historical main table because Gemini 2.0 Flash was no longer available at rerun time.
+
+### 3.4 Boundary tasks and packs
+
+We additionally retain three boundary probes:
+
+- **Self-contained algorithmic task:** the task block contains all information needed to answer execution-trace questions; coordination is irrelevant.
+- **Context-distraction task:** the coordination block contains salient project-specific decisions that conflict with broad-prior questions.
+- **External benchmark packs:** GSM8K, MMLU-Pro, and DROP are grouped into 10-item packs so that task-block size can become binding under fixed $W$.
 
 ## 4. Results
 
-### 4.1 Main Context-Dependent Task
+### 4.1 Fixed-budget main task
 
-Table 1 shows the pooled main-task scores at $W=4096$. All three models maintain high scores at low and moderate coordination overhead. Degradation becomes sharp in the 90--98\% region.
+Table 1 shows the main fixed-budget result. Accuracy is stable through moderate overhead, then degrades sharply when the task block becomes very small.
 
 \begin{table}[t]
 \centering
 \small
-\caption{Main context-dependent RCWT task at $W=4096$, pooled over position order. Scores are effective binary accuracy.}
+\caption{Main context-dependent RCWT task at $W=4096$, pooled over position order. Scores are effective binary accuracy from the submitted aggregate files.}
 \begin{tabular}{lrrrr}
 \toprule
-Coord. overhead & Task tokens & Gemini & Haiku & GPT \\
+Coord. overhead & Task tokens & Gemini 2.0 Flash & Haiku 4.5 & GPT-4.1-mini \\
 \midrule
 0\%  & 4096 & 1.000 & 0.972 & 1.000 \\
 25\% & 3072 & 0.960 & 0.906 & 0.972 \\
@@ -124,51 +136,16 @@ Coord. overhead & Task tokens & Gemini & Haiku & GPT \\
 \end{tabular}
 \end{table}
 
-At 90\% overhead, degradation from baseline is 34.1 percentage points for Gemini, 30.6 points for Haiku, and 14.7 points for GPT. The GPT curve is shallower, but not flat: it also degrades significantly in the high-overhead region.
+At 90\% overhead, the drop from baseline is 34.1 percentage points for Gemini, 30.6 for Haiku, and 14.7 for GPT. This supports a fixed-budget warning: average prompt length and nominal context window are not sufficient safety signals; the residual task block matters.
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.95\linewidth]{results/rcwt_cross_provider.png}
-\caption{Cross-provider RCWT scores on the main context-dependent task. The transition appears only at high coordination overhead for this task and budget.}
-\end{figure}
+### 4.2 Window scaling
 
-Table 2 summarizes the statistical comparison and fitted transition. Logistic decay has the best AIC among the tested candidate families and high $R^2$ for all three providers. The fitted transition region is model-dependent but lies within a narrow range for this task at $W=4096$. The AIC comparison is descriptive model selection over nine sampled proportions, not evidence that the logistic family is a universal law.
-
-\begin{table}[t]
-\centering
-\scriptsize
-\caption{Main-task statistical and fit summary at $W=4096$. Accuracy CIs are Wilson 95\% intervals over 320 item-level observations per pooled proportion. $p$-values are two-proportion z-tests comparing 0\% and 90\% overhead. AIC reports logistic vs. next-best family.}
-\resizebox{\linewidth}{!}{%
-\begin{tabular}{lccccccc}
-\toprule
-Model & 0\% acc. [CI] & 90\% acc. [CI] & $\Delta$ pp & $p$ & $p_0$ & $R^2$ & AIC log./next \\
-\midrule
-Gemini 2.0 Flash & 1.000 [0.988,1.000] & 0.659 [0.606,0.709] & -34.1 & $<10^{-12}$ & 0.913 & 0.988 & -24.2 / 0.5 \\
-Claude Haiku 4.5 & 0.972 [0.947,0.985] & 0.666 [0.612,0.715] & -30.6 & $<10^{-12}$ & 0.917 & 0.990 & -27.8 / -1.9 \\
-GPT-4.1-mini & 1.000 [0.988,1.000] & 0.853 [0.810,0.888] & -14.7 & $<10^{-12}$ & 0.939 & 0.957 & -19.5 / -6.3 \\
-\bottomrule
-\end{tabular}%
-}
-\end{table}
-
-These results show that nominal context-window size and average prompt length are incomplete safety signals. In this task family, performance can remain stable while coordination content grows through most of the window, then change rapidly once the residual task budget enters the high-overhead region.
-
-### 4.2 Window Scaling
-
-A fixed-proportion explanation would predict that 90\% overhead should have similar effects at different context budgets. The observed pattern does not match that simple account. At $W=4096$, 90\% overhead leaves about 410 task tokens and falls near the degradation region. At $W=8192$, the same 90\% overhead leaves about 819 task tokens and produces much smaller degradation.
-
-We model this with a task-specific residual budget parameter $\theta$. In this interpretation, the transition location follows:
-
-$$
-p_0(W)=1-\frac{\theta}{W}.
-$$
-
-The point is not that $\theta$ is universal; it is an empirical estimate for a given task/model pair. Table 3 summarizes the observed fit across three window sizes for the main task.
+A fixed-proportion account would predict similar degradation at 90\% overhead across window sizes. The observed summaries do not match that account. At $W=4096$, 90\% overhead leaves about 410 task tokens and lies near the degradation region. At $W=8192$, the same proportion leaves about 819 task tokens and produces smaller degradation.
 
 \begin{table}[t]
 \centering
 \small
-\caption{Window-scaling summary for the main task. Prediction uses $\theta$ estimated from the $W=4096$ fit.}
+\caption{Window-scaling summary for the main task. $\theta$ is estimated from the $W=4096$ fit. This is descriptive calibration, not a validated invariant.}
 \begin{tabular}{lrrrr}
 \toprule
 Model & $\theta$ & Pred. $p_0$(8K) & Obs. $p_0$(8K) & Obs. $p_0$(16K) \\
@@ -180,25 +157,36 @@ GPT-4.1-mini & 250 & 96.9\% & 97.1\% & 98.4\% \\
 \end{tabular}
 \end{table}
 
-Across the $4K$, $8K$, and $16K$ runs, the maximum transition-location error is 0.37 percentage points. This is strong evidence that the fixed-proportion story is incomplete for the main task. However, the interpretation remains bounded: different tasks can have different $\theta$ values, and architectural behavior at much larger windows may differ.
+The relation is consistent with residual-budget displacement over these runs. It is not strong evidence that $\theta$ is stable outside this task, these models, or these window sizes.
 
-A $W=32768$ extension further supports the direction of the pattern. At that budget, 97.5\% overhead leaves about 819 task tokens, and the strongest degradation appears only at 99\% overhead, where the remaining task budget is about 328 tokens. The Gemini row in this extension uses Gemini 2.5 Flash rather than Gemini 2.0 Flash, so the $32K$ experiment is treated as extension evidence rather than a direct continuation of the original three-model scaling series.
+### 4.3 Intact-task ablation
 
-### 4.3 Task Dependence
+Table 3 reports the new ablation. Here, the task/reference block is never truncated. Coordination tokens are added around the intact task block, increasing total prompt length. Accuracy remains at ceiling across all tested conditions.
 
-RCWT is intended to characterize task regimes, not only model identities. The boundary tasks show that coordination overhead does not have a single universal effect.
+\begin{table}[t]
+\centering
+\small
+\caption{Intact-task ablation. The full task/reference block is present in every condition. Values are pooled over both prompt orders, $N=10$ calls per ratio per model.}
+\begin{tabular}{lrrrrr}
+\toprule
+Model & 0\% & 50\% & 75\% & 90\% & 95\% \\
+\midrule
+GPT-4.1-mini & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 \\
+Claude Haiku 4.5 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 \\
+Gemini 2.5 Flash & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 \\
+\bottomrule
+\end{tabular}
+\end{table}
 
-#### 4.3.1 Self-Contained Algorithmic Task
+This result directly constrains the revised interpretation. The main fixed-budget cliff does not, by itself, show that coordination text harms reasoning while task evidence remains intact. In this task and scoring setup, the models recover the facts perfectly even with large coordination blocks, as long as the reference remains present. The main effect is therefore best interpreted as displacement/truncation of task evidence under fixed budget.
 
-In the self-contained algorithmic task, the relevant information is in the task block itself. The coordination content is irrelevant. All three providers maintain performance across the tested overhead levels. This suggests that the high-overhead effect in the main task is not caused merely by longer prompts or by the presence of irrelevant text. It appears when coordination content displaces information needed for the task. The aggregate evidence for this boundary task is in \texttt{results/task2/}.
+### 4.4 Boundary tasks and external packs
 
-#### 4.3.2 Context-Distraction Task
+The self-contained algorithmic task remains stable across overhead levels for all three providers. This shows that extra text alone is not sufficient to cause degradation in the tested range.
 
-The context-distraction task creates a different failure mode. The coordination content contains salient claims that conflict with the correct answers. Haiku is the only tested model that degrades strongly in this setup: its pooled score falls from 0.888 at 0\% overhead to 0.670 at 25\% and 0.410 at 50\%, while GPT remains near 0.88--0.92 and Gemini remains at 0.900. The order split is large for Haiku, so we present this as model-specific exploratory evidence rather than a general law. Detailed aggregate files are included in the supplementary materials; representative prompt fragments appear in Appendix A. This pattern indicates that coordination content can hurt not only by consuming budget, but also by changing which evidence a model treats as salient.
+The context-distraction task shows a different and weaker phenomenon: Haiku degrades when coordination content contains salient claims conflicting with the target prior, while GPT and Gemini remain near baseline. Because this effect is model-specific and order-sensitive, we treat it as exploratory evidence of semantic distraction, not as a general law.
 
-### 4.4 Cross-Benchmark Generalization
-
-The first one-question GSM8K and MMLU-Pro probes were underpowered for RCWT: their task blocks were short enough that little meaningful truncation occurred at 90\% overhead. We therefore use 10-item packs per call and add DROP as a passage-heavy reading-comprehension probe. Table 4 reports the corrected pack probes.
+The external pack probes are consistent with the residual-budget account: performance remains near baseline while the full task pack fits, then falls when task content is partially or fully truncated.
 
 \begin{table}[t]
 \centering
@@ -216,48 +204,69 @@ DROP-pack & 0.481--0.624 & 1539--2126 tok & 50\% \\
 \end{tabular}
 \end{table}
 
-The pack probes are consistent with the RCWT pattern: performance remains near baseline while the full task block fits, then drops when the task block is truncated. The transition location differs by benchmark: DROP shifts earlier because the passage-heavy task block truncates by 50\% overhead. These $p_0$ values are descriptive interpolations over five sampled proportions, not evidence of a universal logistic law. The results should not be cited as model benchmark performance because the prompt format asks for multiple compact answers in one call.
-
 ## 5. Discussion
 
-### 5.1 Implications
+### 5.1 What survived review
 
-The main engineering implication is simple: coordination context is not free. Prior work on long-context language models shows that performance can degrade as relevant information is displaced within long inputs, and prompt-compression work treats context length as an explicit cost to be managed \cite{lostmiddle,jiang-etal-2023-llmlingua}. Systems that append agent history, retrieved memories, intermediate summaries, and shared state should therefore track the resulting coordination proportion and the residual task budget.
+The controlled allocation protocol is useful. RCWT isolates one factor that appears in real multi-agent systems: coordination content can consume the same prompt budget needed for task evidence. The main data support a practical engineering rule: measure the residual task budget needed by a task family and budget coordination around it.
 
-For tasks similar to the main RCWT task, a conservative heuristic is to reserve a few hundred tokens for the task block; the fitted value is roughly 400 tokens at the tested complexity level. This number is not universal; it is a calibration point. The cross-task results show why: the estimated residual budget ranges from a few hundred tokens in the main recall task to roughly 1.5K--2.1K tokens in DROP-style passage reasoning, and the DROP transition is smoother because the task block becomes partially or fully truncated earlier. The safer design pattern is to measure $\theta$ for the task family and model, then budget coordination around that value.
+### 5.2 What did not survive review
 
-Compression and state-structuring methods become useful when they preserve relevant coordination information while reducing token count \cite{jiang-etal-2023-llmlingua,llmlingua2}. The context-distraction results also suggest that structure matters: systems should distinguish factual state, inference, uncertainty, and contradiction rather than mixing them into undifferentiated transcript text. This is consistent with agent-memory systems that separate active context from longer-term or retrieved memory, and with reflection-based agents that store distilled feedback rather than raw interaction traces \cite{park2023generativeagentsinteractivesimulacra,packer2024memgptllmsoperatingsystems}.
+The stronger title-level reading---that the paper proves broad reasoning degradation under context competition---does not survive. The main task is recall-heavy; the cliff aligns with small residual task blocks; the intact-task ablation stays at ceiling. The revised claim is therefore narrower and stronger: RCWT measures fixed-budget task displacement, and semantic interference requires separate evidence.
 
-### 5.2 Threats to Validity
+### 5.3 Cost versus benefit
 
-\textbf{Exploratory design.} The main sweep was developed iteratively: early cells suggested a flat region, and cliff cells were added afterward. The fits should be read as empirical characterization and hypothesis generation, not as pre-registered confirmation.
+RCWT measures cost, not net value. Real coordination can improve quality through decomposition, verification, tool use, or memory. A coordination block can be overhead for one agent and the task input for another. The correct practical question is not whether coordination hurts, but whether this coordination content provides enough benefit to justify the task-budget it consumes. RCWT supplies only the cost-side measurement.
 
-\textbf{Task coverage.} The main logistic result is strongest for one technical-specification recall task. Task 4 and the benchmark packs broaden coverage, but a confirmatory study should pre-register more task families. This matters because RCWT estimates a task-specific residual budget: tasks vary in whether relevant evidence is self-contained, retrieved from context, semantically contradicted by coordination content, or truncated under packing. A broader pre-registered set would separate these regimes more cleanly and reduce the risk that the main logistic pattern reflects the idiosyncrasies of one technical-specification task. 
-\textbf{Judge calibration.} The main task uses an automated judge for open-ended response parsing. Cross-vendor re-scoring did not show clear evidence that judges favored outputs from their own model family or provider, but judge-specific strictness remains a limitation.
+### 5.4 Coordination heterogeneity
 
-\textbf{Tokenization.} Providers use different tokenizers. Post-hoc calibration using provider-reported input token counts shows that the cliff-range correction is small relative to the observed model spread, but native tokenization should be preferred in future runs.
+The submitted central coordination block is synthetic and structured. Real coordination varies: dense tool outputs, verbose transcripts, retrieved documents, distilled state, uncertainty annotations, or contradictory agent claims may behave differently at the same token count. The current results should not be generalized across all coordination types without a design that varies content type independently of length.
 
-\textbf{Single-call scope.} RCWT measures one inference call with controlled context composition. Multi-agent sessions add retrieval policies, memory summarization, turn scheduling, and tool-mediated state changes. RCWT should therefore be used as a local measurement primitive, not as a full session-level theory.
+## 6. Threats to Validity
 
-\textbf{Output length.} A possible alternative explanation is that high overhead leaves too little output space, producing shorter responses. Output-length analysis does not support this for Haiku and GPT: responses remain near baseline length while accuracy drops. Gemini shows a partial physical-budget interaction only beyond the quality transition.
+**Exploratory design.** The fixed-budget sweep was developed iteratively. Cliff cells were added after early flat-region observations. Curve fits are descriptive.
 
-## 6. Conclusion
+**Task coverage.** The main result is strongest for one technical-specification recall task. Benchmark packs broaden coverage but do not constitute a pre-registered task-complexity ladder.
 
-RCWT provides a controlled way to study context competition in LLM calls. Across three commercial models on a context-dependent recall task, quality remains high through moderate overhead and then degrades sharply near extreme coordination proportions. A logistic curve is the best empirical summary among the candidate families tested, while window-scaling experiments suggest that the transition is better explained by a task-specific execution reserve than by a fixed coordination proportion alone. The result should not be read as a universal threshold of reasoning tokens. It is a measurement framework plus an empirical warning: coordination content can silently consume the task budget on which the current call depends.
+**Judge calibration.** The main task uses an LLM judge for open-ended parsing. Cross-vendor rescoring did not remove the qualitative cliff, but judge-specific strictness remains a limitation. The intact-task ablation uses deterministic JSON scoring to reduce this risk.
+
+**Tokenization.** Provider tokenizers differ. The scripts use `cl100k_base` for construction plus provider-reported token counts where available. Native token accounting should be preferred in future runs.
+
+**Model availability.** Gemini 2.0 Flash was available during the original fixed-budget runs but returned a provider 404 during the 2026-06-11 rerun attempt. Historical aggregate files are retained; new reruns should use current model IDs.
+
+**Single-call scope.** RCWT does not model session-level multi-agent dynamics, retrieval policy, tool failure, memory summarization, or coordination benefit.
+
+## 7. Conclusion
+
+RCWT is a controlled protocol for measuring task-budget displacement from coordination content in LLM calls. The main fixed-budget experiment shows a sharp high-overhead cliff on a context-dependent recall task, and window summaries are consistent with a task-specific residual-budget interpretation. The new intact-task ablation shows that when the full task block remains present, extra coordination content does not reduce accuracy in the tested setup. This narrows the contribution: coordination context is not cost-free under fixed budgets, but the main evidence supports displacement of task evidence rather than a general semantic competition law. Practical systems should track residual task budget, not only nominal context size or total prompt length.
 
 ## Acknowledgements
-We used LLM tools to assist with grammar correction and rephrasing during manuscript preparation. The authors take full responsibility for the content, experiments, analysis, and claims.
 
-## Appendix A. Prompt and Task Examples
+LLM tools were used for grammar correction and drafting assistance. The authors take responsibility for the experiments, analysis, and claims.
 
-The experiments use controlled prompt fragments rather than production logs. Full prompt templates and aggregate files are included in the review artifact.
+## Appendix A. Reproduction commands
 
-\textbf{Main context-dependent task.} The coordination block is a technical specification. A representative excerpt states that PostgreSQL LISTEN/NOTIFY has an 8KB payload limit, Redis Pub/Sub handles roughly 100K messages per second but has no persistence, and Redis Streams has persistence with about 5ms latency versus about 1ms for Pub/Sub. The model is asked for a structured technical analysis, and binary scored items check whether these facts are recovered correctly.
+Run the intact-task ablation:
 
-\textbf{Self-contained algorithmic task.} The task block gives a Python function that partitions `items=[3, 10, 15, 7, 10, 22, 4]` around `threshold=10`. Representative scored questions ask whether the sum is 71, whether indices 2 and 5 are above threshold, and whether the maximum above-threshold value is 22. The answers are fully determined by the code and input, so the coordination block is irrelevant.
+```bash
+PYTHONPATH=src python src/rcwt_intact_ablation.py \
+  --models gpt-4.1-mini,claude-haiku-4-5-20251001,gemini-2.5-flash \
+  --ratios 0,0.5,0.75,0.9,0.95 \
+  --orders coord_first,reason_first \
+  --n-trials 5 \
+  --output-dir results/intact_ablation
 
-\textbf{Context-distraction task.} The coordination block is a controlled meeting transcript for an invented data-platform project. It states that Kafka Streams was selected after load tests, 180-day retention was chosen, and an in-house masking layer was selected because a vendor failed a SOC 2 requirement. The task block asks broader yes/no questions such as whether building a data-masking layer in-house is generally more cost-effective than buying a third-party SaaS solution. The correct answer is `NO`, even though the project-specific transcript says to build in-house; this creates a salient contradiction between coordination content and the target prior.
+PYTHONPATH=src python src/rescore_intact_ablation.py \
+  --responses results/intact_ablation/rcwt_intact_ablation_responses.jsonl \
+  --output-dir results/intact_ablation
+```
 
+Main submitted result files:
+
+- `results/rcwt_controlled_aggregates.json`
+- `results/rcwt_curve_fits.json`
+- `results/cross_benchmark_pack_summary_with_drop.json`
+- `results/intact_ablation/rcwt_intact_ablation_aggregates.json`
 
 ## References
 
@@ -275,18 +284,6 @@ Wu, Q., Bansal, G., Zhang, J., Wu, Y., Li, B., Zhu, E., Jiang, L., Zhang, X., Zh
 \bibitem{guo2024multiagents}
 Guo, T., Chen, X., Wang, Y., Chang, R., Pei, S., Chawla, N.V., Wiest, O., Zhang, X.: Large Language Model based Multi-Agents: A Survey of Progress and Challenges. arXiv:2402.01680 (2024).
 
-\bibitem{longlora}
-Chen, Y., Qian, S., Tang, H., Lai, X., Liu, Z., Han, S., Jia, J.: LongLoRA: Efficient Fine-tuning of Long-Context Large Language Models. In: ICLR (2024).
-
-\bibitem{du2025contextlength}
-Du, Y., Tian, M., Ronanki, S., Rongali, S., Bodapati, S.B., Galstyan, A., Wells, A., Schwartz, R., Huerta, E.A., Peng, H.: Context Length Alone Hurts LLM Performance Despite Perfect Retrieval. In: Findings of EMNLP (2025).
-
-\bibitem{mast}
-Cemri, M., Pan, M.Z., Yang, S., Agrawal, L.A., Chopra, B., Tiwari, R., Keutzer, K., Parameswaran, A., Klein, D., Ramchandran, K., Zaharia, M., Gonzalez, J.E., Stoica, I.: Why Do Multi-Agent LLM Systems Fail? arXiv:2503.13657 (2025).
-
-\bibitem{scalingagents}
-Kim, Y., Gu, K., Park, C., Park, C., Schmidgall, S., Heydari, A.A., Yan, Y., Zhang, Z., Zhuang, Y., Liu, Y., Malhotra, M., Liang, P.P., Park, H.W., Yang, Y., Xu, X., Du, Y., Patel, S., Althoff, T., McDuff, D., Liu, X.: Towards a Science of Scaling Agent Systems. arXiv:2512.08296 (2026).
-
 \bibitem{lostmiddle}
 Liu, N.F., Lin, K., Hewitt, J., Paranjape, A., Bevilacqua, M., Petroni, F., Liang, P.: Lost in the Middle: How Language Models Use Long Contexts. Transactions of the Association for Computational Linguistics 12, 157--173 (2024).
 
@@ -294,10 +291,13 @@ Liu, N.F., Lin, K., Hewitt, J., Paranjape, A., Bevilacqua, M., Petroni, F., Lian
 Bai, Y., Lv, X., Zhang, J., Lyu, H., Tang, J., Huang, Z., Du, Z., Liu, X., Zeng, A., Hou, L., Dong, Y., Tang, J., Li, J.: LongBench: A Bilingual, Multitask Benchmark for Long Context Understanding. In: ACL (2024).
 
 \bibitem{ruler}
-Hsieh, C.P., Sun, S., Kriman, S., Acharya, S., Rekesh, D., Jia, F., Zhang, Y., Ginsburg, B.: RULER: What's the Real Context Size of Your Long-Context Language Models? In: COLM (2024).
+Hsieh, C.P., Sun, S., Kriman, S., Acharya, S., Rekesh, D., Jia, F., Zhang, Y., Ginsburg, B.: RULER: What's the Real Context Size of Your Long-Context Language Models? In: First Conference on Language Modeling (2024).
 
-\bibitem{ivgi-etal-2023-efficient}
-Ivgi, M., Shaham, U., Berant, J.: Efficient Long-Text Understanding with Short-Text Models. Transactions of the Association for Computational Linguistics 11, 284--299 (2023).
+\bibitem{du2025contextlength}
+Du, Y., Tian, M., Ronanki, S., Rongali, S., Bodapati, S.B., Galstyan, A., Wells, A., Schwartz, R., Huerta, E.A., Peng, H.: Context Length Alone Hurts LLM Performance Despite Perfect Retrieval. In: Findings of ACL: EMNLP (2025).
+
+\bibitem{longlora}
+Chen, Y., Qian, S., Tang, H., Lai, X., Liu, Z., Han, S., Jia, J.: LongLoRA: Efficient Fine-tuning of Long-Context Large Language Models. In: ICLR (2024).
 
 \bibitem{flashattention}
 Dao, T., Fu, D.Y., Ermon, S., Rudra, A., Ré, C.: FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness. In: NeurIPS (2022).
@@ -309,27 +309,27 @@ Beltagy, I., Peters, M.E., Cohan, A.: Longformer: The Long-Document Transformer.
 Zaheer, M., Guruganesh, G., Dubey, A., Ainslie, J., Alberti, C., Ontanon, S., Pham, P., Ravula, A., Wang, Q., Yang, L., Ahmed, A.: Big Bird: Transformers for Longer Sequences. In: NeurIPS (2020).
 
 \bibitem{jiang-etal-2023-llmlingua}
-Jiang, H., Wu, Q., Lin, C.Y., Yang, Y., Qiu, L.: LLMLingua: Compressing Prompts for Accelerated Inference of Large Language Models. In: EMNLP (2023).
+Jiang, H., Wu, Q., Lin, C.Y., Yang, Y., Qiu, L.: LLMLingua: Compressing Prompts for Accelerated Inference of Large Language Models. In: EMNLP, pp. 13358--13376 (2023).
 
 \bibitem{llmlingua2}
-Pan, Z., Wu, Q., Jiang, H., Xia, M., Luo, X., Zhang, J., Lin, Q., Rühle, V., Yang, Y., Qiu, L., Zhang, D.: LLMLingua-2: Data Distillation for Efficient and Faithful Task-Agnostic Prompt Compression. In: Findings of ACL (2024).
+Pan, Z., Wu, Q., Jiang, H., Xia, M., Luo, X., Zhang, J., Lin, Q., Rühle, V., Yang, Y., Lin, C.Y., Zhao, H.V., Qiu, L., Zhang, D.: LLMLingua-2: Data Distillation for Efficient and Faithful Task-Agnostic Prompt Compression. In: Findings of ACL (2024).
 
-\bibitem{park2023generativeagentsinteractivesimulacra}
-Park, J.S., O'Brien, J.C., Cai, C.J., Morris, M.R., Liang, P., Bernstein, M.S.: Generative Agents: Interactive Simulacra of Human Behavior. arXiv:2304.03442 (2023).
+\bibitem{mast}
+Cemri, M., Pan, M.Z., Yang, S., Agrawal, L.A., Chopra, B., Tiwari, R., Keutzer, K., Parameswaran, A., Klein, D., Ramchandran, K., Zaharia, M., Gonzalez, J.E., Stoica, I.: Why Do Multi-Agent LLM Systems Fail? arXiv:2503.13657 (2025).
 
-\bibitem{packer2024memgptllmsoperatingsystems}
-Packer, C., Wooders, S., Lin, K., Fang, V., Patil, S.G., Stoica, I., Gonzalez, J.E.: MemGPT: Towards LLMs as Operating Systems. arXiv:2310.08560 (2024).
-
-\bibitem{wilson1927probable}
-Wilson, E.B.: Probable inference, the law of succession, and statistical inference. Journal of the American Statistical Association 22(158), 209--212 (1927).
+\bibitem{scalingagents}
+Kim, Y., Gu, K., Park, C., Park, C., Schmidgall, S., Heydari, A.A., Yan, Y., Zhang, Z., Zhuang, Y., Liu, Y., Malhotra, M., Liang, P.P., Park, H.W., Yang, Y., Xu, X., Du, Y., Patel, S., Althoff, T., McDuff, D., Liu, X.: Towards a Science of Scaling Agent Systems. arXiv:2512.08296 (2025).
 
 \bibitem{gsm8k}
 Cobbe, K., Kosaraju, V., Bavarian, M., Chen, M., Jun, H., Kaiser, L., Plappert, M., Tworek, J., Hilton, J., Nakano, R., Hesse, C., Schulman, J.: Training Verifiers to Solve Math Word Problems. arXiv:2110.14168 (2021).
 
 \bibitem{mmlupro}
-Wang, Y., Ma, X., Zhang, G., Ni, Y., Chandra, A., Guo, S., Ren, W., Arulraj, A., He, X., Jiang, Z., Li, T., Ku, M., Wang, K., Zhuang, A., Fan, R., Yue, X., Chen, W.: MMLU-Pro: A More Robust and Challenging Multi-Task Language Understanding Benchmark. arXiv:2406.01574 (2024).
+Wang, Y., Ma, X., Zhang, G., Ni, Y., Chandra, A., Guo, S., Ren, W., Arulraj, A., He, X., Jiang, Z., Li, T., Ku, M., Wang, K., Zhuang, A., Fan, R., Yue, X., Chen, W.: MMLU-Pro: A More Robust and Challenging Multi-Task Language Understanding Benchmark. In: NeurIPS Datasets and Benchmarks Track (2024).
 
 \bibitem{drop}
-Dua, D., Wang, Y., Dasigi, P., Stanovsky, G., Singh, S., Gardner, M.: DROP: A Reading Comprehension Benchmark Requiring Discrete Reasoning Over Paragraphs. In: NAACL-HLT (2019).
+Dua, D., Wang, Y., Dasigi, P., Stanovsky, G., Singh, S., Gardner, M.: DROP: A Reading Comprehension Benchmark Requiring Discrete Reasoning Over Paragraphs. In: NAACL-HLT, pp. 2368--2378 (2019).
+
+\bibitem{wilson1927probable}
+Wilson, E.B.: Probable Inference, the Law of Succession, and Statistical Inference. Journal of the American Statistical Association 22(158), 209--212 (1927).
 
 \end{thebibliography}
