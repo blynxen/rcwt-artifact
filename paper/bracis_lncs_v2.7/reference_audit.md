@@ -10,7 +10,7 @@ Verified keys:
 - `longlora` — OpenReview ICLR 2024 metadata and BibTeX.
 - `du2025contextlength` — ACL Anthology Findings of EMNLP 2025 metadata and BibTeX.
 - `mast` — arXiv:2503.13657.
-- `scalingagents` — arXiv:2512.08296.
+- `scalingagents` — arXiv:2512.08296, dated December 2025 on arXiv.
 - `lostmiddle` — arXiv:2307.03172, TACL status shown on arXiv.
 - `longbench` — arXiv:2308.14508, ACL 2024 status shown on arXiv.
 - `ruler` — arXiv:2404.06654, COLM 2024 status shown on arXiv.
