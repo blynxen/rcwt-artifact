@@ -16,7 +16,7 @@ header-includes:
 ---
 
 \begin{abstract}
-Multi-agent and memory-augmented LLM systems often place coordination content---shared state, prior discussion, tool outputs, summaries, and role instructions---inside the same finite prompt used for the current task. This creates a practical allocation problem: every token spent on coordination is unavailable to the task block when a call is assembled under a fixed context budget. We introduce the Roundtable Context Window Test (RCWT), a controlled protocol for measuring this task-budget displacement effect. RCWT varies coordination content while controlling total budget, position order, task family, and scoring. In the main context-dependent recall task at $W=4096$, three commercial models remain near baseline through moderate overhead and then degrade sharply once the residual task block falls to a few hundred tokens. Window-scaling summaries are consistent with a task-specific residual-budget interpretation rather than a fixed percentage threshold, but we treat this as descriptive evidence rather than a universal law. To address the truncation-versus-competition confound raised by review, we add an intact-task ablation: the full task/reference block is kept present while coordination tokens increase by expanding total prompt length. In that setting, accuracy remains at 1.000 across GPT-4.1-mini, Claude Haiku 4.5, and Gemini 2.5 Flash up to a 95\% coordination ratio. This ablation narrows the claim: the main RCWT cliff is best read as task-budget displacement, not as proof of semantic interference when the task remains intact. RCWT is therefore a measurement primitive for context-allocation budgeting, not a complete theory of multi-agent benefit or session-level coordination.
+Multi-agent and memory-augmented LLM systems often place coordination content---shared state, prior discussion, tool outputs, summaries, and role instructions---inside the same finite prompt used for the current task. This creates a practical allocation problem: every token spent on coordination is unavailable to the task block when a call is assembled under a fixed context budget. We introduce the Roundtable Context Window Test (RCWT), a controlled protocol for measuring this task-budget displacement effect. RCWT varies coordination content while controlling total budget, position order, task family, and scoring. In the main context-dependent recall task at $W=4096$, three commercial models remain near baseline through moderate overhead and then degrade sharply once the residual task block falls to a few hundred tokens. Window-scaling summaries are consistent with a task-specific residual-budget interpretation rather than a fixed percentage threshold, but we treat this as descriptive evidence rather than a universal law. To distinguish task displacement from semantic interference, we add an intact-task ablation: the full task/reference block is kept present while coordination tokens increase by expanding total prompt length. In that setting, accuracy remains at 1.000 across GPT-4.1-mini, Claude Haiku 4.5, and Gemini 2.5 Flash up to a 95\% coordination ratio. This ablation narrows the claim: the main RCWT cliff is best read as task-budget displacement, not as proof of semantic interference when the task remains intact. RCWT is therefore a measurement primitive for context-allocation budgeting, not a complete theory of multi-agent benefit or session-level coordination.
 \keywords{Large language models \and Multi-agent systems \and Context windows \and Benchmarking \and Prompt allocation}
 \end{abstract}
 
@@ -30,7 +30,7 @@ $$
 R_M(c,W,T) \in [0,1],
 $$
 
-where $M$ is the model and $T$ is the task family. The original submission called this broadly context competition. The revised paper uses the more precise term **task-budget displacement** for the main effect: under fixed $W$, increasing coordination content can physically reduce or truncate the task evidence needed by the current call.
+where $M$ is the model and $T$ is the task family. We use the term **task-budget displacement** for the main effect: under fixed $W$, increasing coordination content can physically reduce or truncate the task evidence needed by the current call.
 
 We introduce the Roundtable Context Window Test (RCWT). RCWT is a single-call benchmark protocol that varies coordination allocation while controlling prompt order and scoring. It intentionally excludes full multi-agent session dynamics such as turn scheduling, retrieval policy, memory writes, tool failures, and agent topology. Those factors matter, but mixing them into the same experiment would obscure the local allocation effect.
 
@@ -38,7 +38,7 @@ The revised contributions are:
 
 1. **A controlled protocol.** RCWT varies coordination allocation under fixed budget with position control, explicit token accounting, and task-level scoring.
 2. **A fixed-budget displacement result.** On a technical-specification recall task, accuracy remains high at moderate overhead and drops sharply only when the residual task block becomes very small.
-3. **A truncation-disambiguating ablation.** When the full task block remains intact and total prompt length grows to accommodate coordination, accuracy stays at ceiling across tested models and ratios.
+3. **A truncation-disambiguating ablation.** When the full task block remains intact and total prompt length grows to accommodate coordination, we detect no cliff-sized degradation across tested models and ratios.
 4. **Task dependence and boundary evidence.** Self-contained tasks remain stable, contradictory coordination can produce model-specific distraction, and passage-heavy DROP packs require much larger residual task budgets.
 5. **A scoped engineering implication.** Coordination context should be budgeted against task-specific residual needs. RCWT does not measure the net benefit of coordination.
 
@@ -97,9 +97,9 @@ This relation is an empirical description over the tested window sizes. With onl
 
 ### 3.3 Intact-task ablation
 
-The key revision is an ablation that directly addresses whether the main cliff is caused by task truncation or by semantic interference from extra coordination text. The full task/reference block is kept intact in every condition. Coordination tokens are varied around it, and the total prompt length grows accordingly. Thus, the task is never physically shortened.
+We add an ablation that directly tests whether the main cliff is caused by task truncation or by semantic interference from extra coordination text. The full task/reference block is kept intact in every condition. Coordination tokens are varied around it, and the total prompt length grows accordingly. Thus, the task is never physically shortened.
 
-The ablation uses deterministic JSON scoring rather than an LLM judge. It asks for eight exact fields matching the same reference facts used in the main task. Tested ratios are $0, 0.50, 0.75, 0.90, 0.95$; both prompt orders are tested; $N=5$ per condition; models are GPT-4.1-mini, Claude Haiku 4.5, and Gemini 2.5 Flash. The Gemini model differs from the historical main table because Gemini 2.0 Flash was no longer available at rerun time.
+The ablation uses deterministic JSON scoring rather than an LLM judge. It asks for eight exact fields matching the same reference facts used in the main task. In this ablation, the coordination ratio is $c/(c+t)$, where $t$ is the intact task/reference block; this differs from the fixed-budget experiment, where the ratio is $c/W$. The measured task/reference block has $t=698$ construction tokens. Tested ratios are $0, 0.50, 0.75, 0.90, 0.95$, corresponding to 0, 698, 2,094, 6,282, and 13,262 coordination tokens and estimated prompt sizes of 702, 1,401, 2,797, 6,985, and 13,965 tokens. Both prompt orders are tested with $N=5$ per order, so each model-ratio cell pools $10$ calls and $80$ binary field decisions. Models are GPT-4.1-mini, Claude Haiku 4.5, and Gemini 2.5 Flash. The Gemini model differs from the historical main table because Gemini 2.0 Flash was unavailable during later reruns.
 
 ### 3.4 Boundary tasks and packs
 
@@ -161,12 +161,12 @@ The relation is consistent with residual-budget displacement over these runs. It
 
 ### 4.3 Intact-task ablation
 
-Table 3 reports the new ablation. Here, the task/reference block is never truncated. Coordination tokens are added around the intact task block, increasing total prompt length. Accuracy remains at ceiling across all tested conditions.
+Table 3 reports the ablation. Here, the task/reference block is never truncated. Coordination tokens are added around the intact task block, increasing total prompt length. Accuracy remains at ceiling across all tested conditions.
 
 \begin{table}[t]
 \centering
 \small
-\caption{Intact-task ablation. The full task/reference block is present in every condition. Values are pooled over both prompt orders, $N=10$ calls per ratio per model.}
+\caption{Intact-task ablation. The full task/reference block is present in every condition. Values are pooled over both prompt orders, $N=10$ calls and $80$ binary field decisions per ratio per model.}
 \begin{tabular}{lrrrrr}
 \toprule
 Model & 0\% & 50\% & 75\% & 90\% & 95\% \\
@@ -178,7 +178,7 @@ Gemini 2.5 Flash & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 \\
 \end{tabular}
 \end{table}
 
-This result directly constrains the revised interpretation. The main fixed-budget cliff does not, by itself, show that coordination text harms reasoning while task evidence remains intact. In this task and scoring setup, the models recover the facts perfectly even with large coordination blocks, as long as the reference remains present. The main effect is therefore best interpreted as displacement/truncation of task evidence under fixed budget.
+Each model-ratio cell is $80/80$ correct, giving a Wilson 95\% interval of approximately $[0.954,1.000]$ per cell; pooled across all model-ratio cells, the result is $1200/1200$ field decisions with interval $[0.9968,1.000]$. This result directly constrains the revised interpretation. The main fixed-budget cliff does not, by itself, show that coordination text harms reasoning while task evidence remains intact. In this task and scoring setup, we detect no large semantic-interference effect even with large coordination blocks, as long as the reference remains present. The ablation does not rule out small effects, for example a 3--5 percentage-point degradation that this sample size would have low power to detect. The main effect is therefore best interpreted as displacement/truncation of task evidence under fixed budget.
 
 ### 4.4 Boundary tasks and external packs
 
@@ -206,13 +206,13 @@ DROP-pack & 0.481--0.624 & 1539--2126 tok & 50\% \\
 
 ## 5. Discussion
 
-### 5.1 What survived review
+### 5.1 Scope of the contribution
 
 The controlled allocation protocol is useful. RCWT isolates one factor that appears in real multi-agent systems: coordination content can consume the same prompt budget needed for task evidence. The main data support a practical engineering rule: measure the residual task budget needed by a task family and budget coordination around it.
 
-### 5.2 What did not survive review
+### 5.2 Limitations of the stronger interpretation
 
-The stronger title-level reading---that the paper proves broad reasoning degradation under context competition---does not survive. The main task is recall-heavy; the cliff aligns with small residual task blocks; the intact-task ablation stays at ceiling. The revised claim is therefore narrower and stronger: RCWT measures fixed-budget task displacement, and semantic interference requires separate evidence.
+The stronger title-level reading---that the paper proves broad reasoning degradation under context competition---is not supported. The main task is recall-heavy; the cliff aligns with small residual task blocks; the intact-task ablation stays at ceiling. The supported claim is therefore narrower and stronger: RCWT measures fixed-budget task displacement, and semantic interference requires separate evidence. The ablation limits any semantic effect in this setup to below a large cliff-sized degradation; it should not be read as proof that semantic interference is zero.
 
 ### 5.3 Cost versus benefit
 
@@ -220,7 +220,7 @@ RCWT measures cost, not net value. Real coordination can improve quality through
 
 ### 5.4 Coordination heterogeneity
 
-The submitted central coordination block is synthetic and structured. Real coordination varies: dense tool outputs, verbose transcripts, retrieved documents, distilled state, uncertainty annotations, or contradictory agent claims may behave differently at the same token count. The current results should not be generalized across all coordination types without a design that varies content type independently of length.
+The central coordination block is synthetic and structured. Real coordination varies: dense tool outputs, verbose transcripts, retrieved documents, distilled state, uncertainty annotations, or contradictory agent claims may behave differently at the same token count. The current results should not be generalized across all coordination types without a design that varies content type independently of length.
 
 ## 6. Threats to Validity
 
@@ -228,17 +228,17 @@ The submitted central coordination block is synthetic and structured. Real coord
 
 **Task coverage.** The main result is strongest for one technical-specification recall task. Benchmark packs broaden coverage but do not constitute a pre-registered task-complexity ladder.
 
-**Judge calibration.** The main task uses an LLM judge for open-ended parsing. Cross-vendor rescoring did not remove the qualitative cliff, but judge-specific strictness remains a limitation. The intact-task ablation uses deterministic JSON scoring to reduce this risk.
+**Judge calibration.** The main task uses an LLM judge for open-ended parsing. Cross-vendor rescoring did not remove the qualitative cliff, but judge-specific strictness remains a limitation. The intact-task ablation uses deterministic JSON scoring to reduce this risk, but it also changes response format and scoring method. Therefore, the ablation is best interpreted as a test for a large semantic-interference effect under intact evidence, not as a token-identical rescore of the open-ended main task.
 
 **Tokenization.** Provider tokenizers differ. The scripts use `cl100k_base` for construction plus provider-reported token counts where available. Native token accounting should be preferred in future runs.
 
-**Model availability.** Gemini 2.0 Flash was available during the original fixed-budget runs but returned a provider 404 during the 2026-06-11 rerun attempt. Historical aggregate files are retained; new reruns should use current model IDs.
+**Model availability.** Gemini 2.0 Flash was available during the original fixed-budget runs but was unavailable during later reruns. Historical aggregate files are retained; new reruns and the intact-task ablation use current model IDs.
 
 **Single-call scope.** RCWT does not model session-level multi-agent dynamics, retrieval policy, tool failure, memory summarization, or coordination benefit.
 
 ## 7. Conclusion
 
-RCWT is a controlled protocol for measuring task-budget displacement from coordination content in LLM calls. The main fixed-budget experiment shows a sharp high-overhead cliff on a context-dependent recall task, and window summaries are consistent with a task-specific residual-budget interpretation. The new intact-task ablation shows that when the full task block remains present, extra coordination content does not reduce accuracy in the tested setup. This narrows the contribution: coordination context is not cost-free under fixed budgets, but the main evidence supports displacement of task evidence rather than a general semantic competition law. Practical systems should track residual task budget, not only nominal context size or total prompt length.
+RCWT is a controlled protocol for measuring task-budget displacement from coordination content in LLM calls. The main fixed-budget experiment shows a sharp high-overhead cliff on a context-dependent recall task, and window summaries are consistent with a task-specific residual-budget interpretation. The intact-task ablation shows that when the full task block remains present, we detect no large degradation from extra coordination content in the tested setup, while small semantic effects remain possible. This narrows the contribution: coordination context is not cost-free under fixed budgets, but the main evidence supports displacement of task evidence rather than a general semantic competition law. Practical systems should track residual task budget, not only nominal context size or total prompt length.
 
 ## Acknowledgements
 

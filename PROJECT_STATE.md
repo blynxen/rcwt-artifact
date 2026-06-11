@@ -25,7 +25,7 @@ Supported:
 
 - Under fixed context budget, coordination content can displace or truncate task evidence.
 - The main cliff is best explained as a residual task-budget effect for the tested recall task.
-- When the full task/reference block remains present in the new ablation, the tested models stay at ceiling accuracy.
+- When the full task/reference block remains present in the new ablation, the tested models stay at ceiling accuracy; this rules out a large cliff-sized semantic-interference effect in this setup, not small effects.
 
 Not claimed:
 
@@ -33,7 +33,7 @@ Not claimed:
 - RCWT measures session-level multi-agent value.
 - The fitted logistic curve is a universal mechanism.
 - The residual reserve parameter is stable across tasks, models, or windows.
-- Semantic interference is absent in general.
+- Semantic interference is absent in general or exactly zero in the intact ablation.
 
 ## Next action
 

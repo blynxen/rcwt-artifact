@@ -30,7 +30,8 @@ requirements.txt             Python dependencies
 3. **Intact-task ablation:** when the full task/reference block is kept intact
    and coordination tokens are added by increasing total prompt length, accuracy
    stays at 1.000 for GPT-4.1-mini, Claude Haiku 4.5, and Gemini 2.5 Flash
-   across tested coordination ratios up to 95%.
+   across tested coordination ratios up to 95%. This rules out a large
+   cliff-sized semantic-interference effect in this setup, not small effects.
 4. **Boundary tasks:** self-contained algorithmic tasks remain stable; a
    contradictory-coordination task shows model-specific semantic distraction;
    DROP-style packs require much larger residual task budgets.
@@ -74,6 +75,11 @@ Outputs:
 - `results/intact_ablation/rcwt_intact_ablation.csv`
 - `results/intact_ablation/rcwt_intact_ablation_aggregates.json`
 - `results/intact_ablation/rcwt_intact_ablation_responses.jsonl`
+
+In the intact ablation, `target_ratio = c/(c+t)`, where `t=698` is the
+intact task/reference block. Ratios `0,0.5,0.75,0.9,0.95` correspond to
+estimated prompt sizes `702,1401,2797,6985,13965` construction tokens. Each
+model-ratio cell pools 10 calls and 80 binary field decisions.
 
 ## Existing result summaries used by the paper
 

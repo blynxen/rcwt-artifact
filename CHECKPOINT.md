@@ -42,6 +42,16 @@ Additional checks:
 - No `Task 4` references remain in the revised manuscript Markdown or generated PDF text.
 - Tracked SVG/PDF/HTML remote-asset scan found only the standard SVG namespace `http://www.w3.org/2000/svg`; no external `href`, `src`, `url(http...)`, `https://`, or `cdnjs` asset references.
 
+
+## Follow-up cleanup after Weak Accept re-review
+
+- Removed paper-body language that referred to the review process.
+- Defined intact-ablation ratio as `c/(c+t)` and reported token counts for each ratio.
+- Added call/field-level denominators and Wilson intervals for the ceiling result.
+- Qualified the intact ablation as ruling out a large cliff-sized effect, not small semantic effects.
+- Neutralized model-availability wording in the paper.
+- Expanded judge-calibration limitations to include scoring-method asymmetry.
+
 ## Known limits
 
 - The revision does not claim to solve net multi-agent benefit. RCWT remains a single-call cost-side measurement primitive.

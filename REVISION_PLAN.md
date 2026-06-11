@@ -56,3 +56,12 @@ identified three concrete risks that were fixed before commit:
   rule for both coordination and task/reference blocks.
 - The manual bibliography entry for `Towards a Science of Scaling Agent
   Systems` used the wrong arXiv id; it now matches arXiv:2512.08296.
+
+Final pre-submission cleanup after the Weak Accept re-review:
+
+- Removed response-letter language from the manuscript body.
+- Defined the intact-ablation ratio as `c/(c+t)` and distinguished it from `c/W`.
+- Reported task tokens, coordination tokens, estimated prompt sizes, calls, field-level denominators, and Wilson intervals for the intact ablation.
+- Qualified the ceiling result as "no large detected semantic-interference effect," not proof of zero effect.
+- Moved the Gemini availability note from operational error language to neutral paper language.
+- Expanded the judge-calibration threat to state the scoring-method asymmetry between the open-ended main task and deterministic intact ablation.
