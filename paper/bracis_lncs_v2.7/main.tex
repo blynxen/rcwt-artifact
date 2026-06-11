@@ -142,7 +142,7 @@ memory writes, tool failures, and agent topology. Those factors matter,
 but mixing them into the same experiment would obscure the local
 allocation effect.
 
-The revised contributions are:
+The contributions are:
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
@@ -337,7 +337,7 @@ very small.
 \begin{table}[t]
 \centering
 \small
-\caption{Main context-dependent RCWT task at $W=4096$, pooled over position order. Scores are effective binary accuracy from the submitted aggregate files.}
+\caption{Main context-dependent RCWT task at $W=4096$, pooled over position order. Scores are effective binary accuracy from the artifact aggregate files.}
 \begin{tabular}{lrrrr}
 \toprule
 Coord. overhead & Task tokens & Gemini 2.0 Flash & Haiku 4.5 & GPT-4.1-mini \\
@@ -517,7 +517,9 @@ The intact-task ablation uses deterministic JSON scoring to reduce this
 risk, but it also changes response format and scoring method. Therefore,
 the ablation is best interpreted as a test for a large
 semantic-interference effect under intact evidence, not as a
-token-identical rescore of the open-ended main task.
+token-identical rescore of the open-ended main task. A deterministic
+rescore or human audit of the main open-ended responses remains
+complementary validation.
 
 \textbf{Tokenization.} Provider tokenizers differ. The scripts use
 \texttt{cl100k\_base} for construction plus provider-reported token

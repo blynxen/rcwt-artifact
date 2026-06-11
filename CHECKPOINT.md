@@ -51,6 +51,7 @@ Additional checks:
 - Qualified the intact ablation as ruling out a large cliff-sized effect, not small semantic effects.
 - Neutralized model-availability wording in the paper.
 - Expanded judge-calibration limitations to include scoring-method asymmetry.
+- Applied final neutral wording polish: `The contributions are`, `artifact aggregate files`, and complementary deterministic/human validation for the main judge path.
 
 ## Known limits
 

@@ -34,7 +34,7 @@ where $M$ is the model and $T$ is the task family. We use the term **task-budget
 
 We introduce the Roundtable Context Window Test (RCWT). RCWT is a single-call benchmark protocol that varies coordination allocation while controlling prompt order and scoring. It intentionally excludes full multi-agent session dynamics such as turn scheduling, retrieval policy, memory writes, tool failures, and agent topology. Those factors matter, but mixing them into the same experiment would obscure the local allocation effect.
 
-The revised contributions are:
+The contributions are:
 
 1. **A controlled protocol.** RCWT varies coordination allocation under fixed budget with position control, explicit token accounting, and task-level scoring.
 2. **A fixed-budget displacement result.** On a technical-specification recall task, accuracy remains high at moderate overhead and drops sharply only when the residual task block becomes very small.
@@ -118,7 +118,7 @@ Table 1 shows the main fixed-budget result. Accuracy is stable through moderate 
 \begin{table}[t]
 \centering
 \small
-\caption{Main context-dependent RCWT task at $W=4096$, pooled over position order. Scores are effective binary accuracy from the submitted aggregate files.}
+\caption{Main context-dependent RCWT task at $W=4096$, pooled over position order. Scores are effective binary accuracy from the artifact aggregate files.}
 \begin{tabular}{lrrrr}
 \toprule
 Coord. overhead & Task tokens & Gemini 2.0 Flash & Haiku 4.5 & GPT-4.1-mini \\
@@ -228,7 +228,7 @@ The central coordination block is synthetic and structured. Real coordination va
 
 **Task coverage.** The main result is strongest for one technical-specification recall task. Benchmark packs broaden coverage but do not constitute a pre-registered task-complexity ladder.
 
-**Judge calibration.** The main task uses an LLM judge for open-ended parsing. Cross-vendor rescoring did not remove the qualitative cliff, but judge-specific strictness remains a limitation. The intact-task ablation uses deterministic JSON scoring to reduce this risk, but it also changes response format and scoring method. Therefore, the ablation is best interpreted as a test for a large semantic-interference effect under intact evidence, not as a token-identical rescore of the open-ended main task.
+**Judge calibration.** The main task uses an LLM judge for open-ended parsing. Cross-vendor rescoring did not remove the qualitative cliff, but judge-specific strictness remains a limitation. The intact-task ablation uses deterministic JSON scoring to reduce this risk, but it also changes response format and scoring method. Therefore, the ablation is best interpreted as a test for a large semantic-interference effect under intact evidence, not as a token-identical rescore of the open-ended main task. A deterministic rescore or human audit of the main open-ended responses remains complementary validation.
 
 **Tokenization.** Provider tokenizers differ. The scripts use `cl100k_base` for construction plus provider-reported token counts where available. Native token accounting should be preferred in future runs.
 
