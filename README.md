@@ -31,7 +31,8 @@ requirements.txt             Python dependencies
    and coordination tokens are added by increasing total prompt length, accuracy
    stays at 1.000 for GPT-4.1-mini, Claude Haiku 4.5, and Gemini 2.5 Flash
    across tested coordination ratios up to 95%. This rules out a large
-   cliff-sized semantic-interference effect in this setup, not small effects.
+   cliff-sized semantic-interference effect in this extraction-style setup, not
+   small effects or harder-task interference.
 4. **Boundary tasks:** self-contained algorithmic tasks remain stable; a
    contradictory-coordination task shows model-specific semantic distraction;
    DROP-style packs require much larger residual task budgets.

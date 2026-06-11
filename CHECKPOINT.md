@@ -48,7 +48,7 @@ Additional checks:
 - Removed paper-body language that referred to the review process.
 - Defined intact-ablation ratio as `c/(c+t)` and reported token counts for each ratio.
 - Added call/field-level denominators and Wilson intervals for the ceiling result.
-- Qualified the intact ablation as ruling out a large cliff-sized effect, not small semantic effects.
+- Qualified the intact ablation as ruling out a large cliff-sized effect in an extraction-style intact-evidence setting, not small semantic effects or harder-task interference.
 - Neutralized model-availability wording in the paper.
 - Expanded judge-calibration limitations to include scoring-method asymmetry.
 - Applied final neutral wording polish: `The contributions are`, `artifact aggregate files`, and complementary deterministic/human validation for the main judge path.
