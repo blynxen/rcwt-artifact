@@ -97,7 +97,7 @@ This relation is an empirical description over the tested window sizes. With onl
 
 ### 3.3 Intact-task ablation
 
-We add an ablation that directly tests whether the main cliff is caused by task truncation or by semantic interference from extra coordination text. The full task/reference block is kept intact in every condition. Coordination tokens are varied around it, and the total prompt length grows accordingly. Thus, the task is never physically shortened.
+We add an ablation that probes whether a cliff-sized degradation persists when task evidence is kept intact rather than truncated. The full task/reference block is kept intact in every condition. Coordination tokens are varied around it, and the total prompt length grows accordingly. Thus, the task is never physically shortened.
 
 The ablation uses deterministic JSON scoring rather than an LLM judge. It asks for eight exact fields matching the same reference facts used in the main task. In this ablation, the coordination ratio is $c/(c+t)$, where $t$ is the intact task/reference block; this differs from the fixed-budget experiment, where the ratio is $c/W$. The measured task/reference block has $t=698$ construction tokens. Tested ratios are $0, 0.50, 0.75, 0.90, 0.95$, corresponding to 0, 698, 2,094, 6,282, and 13,262 coordination tokens and estimated prompt sizes of 702, 1,401, 2,797, 6,985, and 13,965 tokens. Both prompt orders are tested with $N=5$ per order, so each model-ratio cell pools $10$ calls and $80$ binary field decisions. Models are GPT-4.1-mini, Claude Haiku 4.5, and Gemini 2.5 Flash. The Gemini model differs from the historical main table because Gemini 2.0 Flash was unavailable during later reruns.
 

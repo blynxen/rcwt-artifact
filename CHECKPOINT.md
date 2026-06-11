@@ -52,6 +52,7 @@ Additional checks:
 - Neutralized model-availability wording in the paper.
 - Expanded judge-calibration limitations to include scoring-method asymmetry.
 - Applied final neutral wording polish: `The contributions are`, `artifact aggregate files`, and complementary deterministic/human validation for the main judge path.
+- Softened §3.3 from "directly tests" to "probes whether a cliff-sized degradation persists" to match the construct-validity caveat.
 
 ## Known limits
 
