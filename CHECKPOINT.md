@@ -1,62 +1,68 @@
-# Checkpoint: RCWT Rejection Revision
+# Checkpoint: RCWT arXiv preprint draft
 
-Date: 2026-06-11
+Date: 2026-07-07
 Branch: `revise/rejection-response`
-Repository: `blynxen/rcwt-artifact`
+Repository: `brendaclelis/rcwt-artifact`
 
 ## Completed
 
-- Reframed the manuscript from broad "context competition" to fixed-budget **task-budget displacement**.
-- Added `REVISION_PLAN.md` with a reviewer-to-fix matrix for BRACIS and Roundtable critiques.
-- Added an intact-task ablation that keeps the full task/reference block present while adding coordination tokens by increasing total prompt length.
-- Added deterministic scoring for the intact-task ablation and a rescore path.
-- Regenerated the LNCS LaTeX and PDF manuscript.
-- Updated README with setup, reproduction commands, result files, and model availability notes.
-- Added `Makefile` targets for paper build, Python compile checks, rescore, and full verification.
-
-## New evidence
-
-- Full intact-task ablation: 150 calls across GPT-4.1-mini, Claude Haiku 4.5, and Gemini 2.5 Flash.
-- Tested ratios: `0, 0.5, 0.75, 0.9, 0.95`.
-- Tested orders: `coord_first`, `reason_first`.
-- Result: all deterministic scores are `1.0` after rescore.
-- Observed total cost in saved CSV: `0.4929728` USD.
+- Built an arXiv/preprint manuscript variant from `paper/bracis_24828_submission-v2.7-revision_2.md`.
+- Kept the revised scientific framing: RCWT measures fixed-budget task-budget displacement, not a general semantic-interference law.
+- Restored the cross-provider RCWT figure and regenerated it as a more legible preprint figure:
+  - `paper/arxiv/figures/rcwt_cross_provider_arxiv.png`
+  - generator: `src/plot_rcwt_arxiv_figure.py`
+- Removed the low-information intact-task ablation table with all-1.000 cells from the arXiv draft; the result is now stated in prose with denominators and Wilson intervals.
+- Renamed `Threats to Validity` to `Limitations` and rewrote that section as paragraphs rather than bold bullet-style entries.
+- Restored the reproduction-command appendix in the arXiv/preprint version.
+- Added a generic NeurIPS-like preprint layout without visible conference-submission footer text:
+  - `paper/arxiv/preprint_2026.sty`
+  - `paper/arxiv/template.tex`
+  - first-page notice is only `Preprint.`
+- Added `src/build_arxiv_preprint_markdown.py` to generate the arXiv Markdown source from the reviewed paper.
+- Added Makefile targets:
+  - `build-arxiv-figure`
+  - `build-arxiv-paper`
+  - `verify-arxiv`
+- Generated final artifacts:
+  - PDF: `paper/rcwt_arxiv_preprint.pdf`
+  - Upload copy: `/Users/brendalelis/Downloads/rcwt_arxiv_preprint.pdf`
+  - TeX source ZIP: `paper/rcwt_arxiv_source.zip`
 
 ## Verification
 
 Executed successfully:
 
 ```bash
-make PYTHON=<python-with-project-dependencies> verify
+make verify-arxiv
 ```
 
 This ran:
 
-- Python compile checks for the new scripts.
-- Deterministic rescore of `results/intact_ablation/rcwt_intact_ablation_responses.jsonl`.
-- Pandoc + `latexmk` PDF build.
+- Python compile checks, including both paper generators and the arXiv figure generator.
+- Figure generation from the manuscript aggregate values.
+- arXiv Markdown generation.
+- Pandoc conversion to LaTeX.
+- Forced `latexmk` PDF build.
+- PDF and source ZIP copy/package steps.
 
-Additional checks:
+Additional checks performed:
 
+- Rendered the final PDF with `pdftoppm` and visually inspected pages 1, 4, 5, 6, 7, and 8.
+- Page 1 shows only the footer notice `Preprint.`; no `Submitted to ...` or `Work in progress` footer appears.
+- The restored figure is legible in the PDF.
+- The old intact-task ablation table caption/text is absent from the PDF.
+- The `Limitations` section appears as prose paragraphs.
+- `Appendix A. Reproduction commands` appears in the PDF.
+- `paper/rcwt_arxiv_source.zip` was unpacked and compiled successfully with `latexmk` in a clean temporary directory.
 - `git diff --check` passed.
-- No `Task 4` references remain in the revised manuscript Markdown or generated PDF text.
-- Tracked SVG/PDF/HTML remote-asset scan found only the standard SVG namespace `http://www.w3.org/2000/svg`; no external `href`, `src`, `url(http...)`, `https://`, or `cdnjs` asset references.
-
-
-## Follow-up cleanup after Weak Accept re-review
-
-- Removed paper-body language that referred to the review process.
-- Defined intact-ablation ratio as `c/(c+t)` and reported token counts for each ratio.
-- Added call/field-level denominators and Wilson intervals for the ceiling result.
-- Qualified the intact ablation as ruling out a large cliff-sized effect in an extraction-style intact-evidence setting, not small semantic effects or harder-task interference.
-- Neutralized model-availability wording in the paper.
-- Expanded judge-calibration limitations to include scoring-method asymmetry.
-- Applied final neutral wording polish: `The contributions are`, `artifact aggregate files`, and complementary deterministic/human validation for the main judge path.
-- Softened §3.3 from "directly tests" to "probes whether a cliff-sized degradation persists" to match the construct-validity caveat.
 
 ## Known limits
 
-- The revision does not claim to solve net multi-agent benefit. RCWT remains a single-call cost-side measurement primitive.
-- Main-task scoring still uses an LLM judge; this is retained as a limitation. The new intact-task ablation uses deterministic scoring.
-- Gemini 2.0 Flash appears only as historical fixed-budget evidence. New reruns use Gemini 2.5 Flash because Gemini 2.0 Flash returned provider 404 on 2026-06-11.
-- External OpenAI adversarial review helper failed because 1Password authorization timed out; local adversarial role-switch review was used instead.
+- The arXiv draft still uses `Anonymous Authors` because author disclosure/publication approval with Terra is pending.
+- Bibliographic references still cite NeurIPS as venue where relevant; the removed NeurIPS reference is the template/submission footer, not legitimate citation metadata.
+- LaTeX reports only minor layout warnings: one underfull vbox and one 1.4pt overfull hbox in an appendix command line. Visual inspection showed no clipping or unreadable text.
+- Existing ENIAC/SBC artifacts remain in the working tree from the prior formatting attempt.
+
+## Next action
+
+Before actual arXiv upload, replace `Anonymous Authors` with the approved author list after the Terra/publication decision. Use `paper/rcwt_arxiv_source.zip` for a TeX-source upload or `/Users/brendalelis/Downloads/rcwt_arxiv_preprint.pdf` for manual review.
